@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class LightEmitter : MonoBehaviour
+public class LE : MonoBehaviour
 {
     public int maxReflections = 5; // 최대 반사 횟수
     public float maxDistance = 50f; // Ray 길이
