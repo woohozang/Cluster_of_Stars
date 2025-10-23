@@ -13,7 +13,7 @@ public class DirectionalHaptics : MonoBehaviour
 
     [Header("민감도 설정")]
     [Tooltip("이 값보다 크게 회전해야 햅틱이 작동합니다.")]
-    public float rotationThreshold = 0.3f;
+    public float rotationThreshold = 0.1f;
 
     private float previousYRotation;
     private bool isVibrating = false;

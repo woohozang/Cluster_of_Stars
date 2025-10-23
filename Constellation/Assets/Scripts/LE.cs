@@ -51,12 +51,13 @@ public class LE : MonoBehaviour
                 else if (hit.collider.CompareTag("Target"))
                 {
                     ApplyHitColor(hit.collider.gameObject);
-                    SpawnParticle(hit.point, hit.normal); // 파티클 생성
+                    hitParticlePrefab.SetActive(true);// 파티클 생성
                     hitTarget = true;
                     break;
                 }
                 else
                 {
+                  
                     break;
                 }
             }
@@ -71,6 +72,7 @@ public class LE : MonoBehaviour
 
         if (!hitTarget)
         {
+            hitParticlePrefab.SetActive(false);
             if (activeParticle != null)
                 Destroy(activeParticle);
 
@@ -105,7 +107,7 @@ public class LE : MonoBehaviour
         targetRenderer.SetPropertyBlock(block);
     }
 
-    void SpawnParticle(Vector3 position, Vector3 normal)
+    /*void SpawnParticle(Vector3 position, Vector3 normal)
     {
         if (hitParticlePrefab == null) return;
 
@@ -118,5 +120,5 @@ public class LE : MonoBehaviour
             activeParticle.transform.position = position;
             activeParticle.transform.rotation = Quaternion.LookRotation(normal);
         }
-    }
+    }*/
 }
