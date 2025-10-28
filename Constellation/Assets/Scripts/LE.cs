@@ -10,6 +10,7 @@ public class LE : MonoBehaviour
     public LineRenderer lineRenderer;
     public Color hitColor = Color.green;
     public GameObject hitParticlePrefab; //  추가 (Inspector에 연결할 프리팹)
+    public GameObject ClearParticle;
 
     private MeshRenderer targetRenderer;
     private MaterialPropertyBlock block;
@@ -52,6 +53,7 @@ public class LE : MonoBehaviour
                 {
                     ApplyHitColor(hit.collider.gameObject);
                     hitParticlePrefab.SetActive(true);// 파티클 생성
+                    ClearParticle.SetActive(true);
                     hitTarget = true;
                     break;
                 }
@@ -73,6 +75,7 @@ public class LE : MonoBehaviour
         if (!hitTarget)
         {
             hitParticlePrefab.SetActive(false);
+            ClearParticle.SetActive(false);
             if (activeParticle != null)
                 Destroy(activeParticle);
 

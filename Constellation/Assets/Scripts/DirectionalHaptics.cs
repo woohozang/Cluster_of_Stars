@@ -5,11 +5,11 @@ public class DirectionalHaptics : MonoBehaviour
     [Header("햅틱 세기 설정")]
     [Tooltip("강한 진동의 세기 (0~1)")]
     [Range(0f, 1f)]
-    public float strongAmplitude = 0.8f;
+    public float strongHaptic = 0.8f;
 
     [Tooltip("약한 진동의 세기 (0~1)")]
     [Range(0f, 1f)]
-    public float weakAmplitude = 0.2f;
+    public float weakHaptic = 0.2f;
 
     [Header("민감도 설정")]
     [Tooltip("이 값보다 크게 회전해야 햅틱이 작동합니다.")]
@@ -43,15 +43,15 @@ public class DirectionalHaptics : MonoBehaviour
             if (deltaRotation < 0)
             {
                 // 왼쪽 컨트롤러는 강하게, 오른쪽은 약하게
-                OVRInput.SetControllerVibration(1, strongAmplitude, OVRInput.Controller.LTouch);
-                OVRInput.SetControllerVibration(1, weakAmplitude, OVRInput.Controller.RTouch);
+                OVRInput.SetControllerVibration(1, strongHaptic, OVRInput.Controller.LTouch);
+                OVRInput.SetControllerVibration(1, weakHaptic, OVRInput.Controller.RTouch);
             }
             // 오른쪽으로 회전할 때 (값이 증가)
             else
             {
                 // 왼쪽 컨트롤러는 약하게, 오른쪽은 강하게
-                OVRInput.SetControllerVibration(1, weakAmplitude, OVRInput.Controller.LTouch);
-                OVRInput.SetControllerVibration(1, strongAmplitude, OVRInput.Controller.RTouch);
+                OVRInput.SetControllerVibration(1, weakHaptic, OVRInput.Controller.LTouch);
+                OVRInput.SetControllerVibration(1, strongHaptic, OVRInput.Controller.RTouch);
             }
             isVibrating = true;
         }

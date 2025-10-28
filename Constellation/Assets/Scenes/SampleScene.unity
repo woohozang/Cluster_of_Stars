@@ -54813,6 +54813,7 @@ MonoBehaviour:
   lineRenderer: {fileID: 784579069}
   hitColor: {r: 1, g: 1, b: 1, a: 1}
   hitParticlePrefab: {fileID: 1378020740}
+  ClearParticle: {fileID: 1001776184}
 --- !u!114 &784579071
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59913,7 +59914,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!135 &1001776185
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -59944,7 +59945,7 @@ Transform:
   m_GameObject: {fileID: 1001776184}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.404, y: 1.778, z: 8.424}
+  m_LocalPosition: {x: 3.027, y: 3.63, z: 9.064}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -60288,8 +60289,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0372b3766ba06f74c920a5a88c5c813a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  strongAmplitude: 0.8
-  weakAmplitude: 0.2
+  strongHaptic: 0.8
+  weakHaptic: 0.2
   rotationThreshold: 0.05
 --- !u!1 &1080416055
 GameObject:
@@ -70465,9 +70466,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0372b3766ba06f74c920a5a88c5c813a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  strongAmplitude: 0.905
-  weakAmplitude: 0.305
-  rotationThreshold: 0.05
+  strongHaptic: 0.8
+  weakHaptic: 0.2
+  rotationThreshold: 0.1
 --- !u!114 &1190412864
 MonoBehaviour:
   m_ObjectHideFlags: 0
