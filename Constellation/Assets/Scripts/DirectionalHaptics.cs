@@ -11,9 +11,25 @@ public class DirectionalHaptics : MonoBehaviour
     [Range(0f, 1f)]
     public float weakHaptic = 0.2f;
 
+    [Header("햅틱 주파수 (Frequency)")]
+    [Tooltip("강한 진동의 주파수 (0~1). 높을수록 '드득드득'합니다.")]
+    [Range(0f, 1f)]
+    public float strongFrequency = 0.9f;
+
+    [Tooltip("약한 진동의 주파수 (0~1). 낮을수록 '드르르'합니다.")]
+    [Range(0f, 1f)]
+    public float weakFrequency = 0.2f;
+
     [Header("민감도 설정")]
     [Tooltip("이 값보다 크게 회전해야 햅틱이 작동합니다.")]
     public float rotationThreshold = 0.1f;
+
+    [Header("무게 설정")]
+    [Tooltip("이 항목을 체크하면 햅틱이 더 강해집니다.")]
+    public bool isHeavy = false;
+
+    [Tooltip("무거울 때 햅틱을 몇 배 증폭시킬지 설정합니다.")]
+    public float heavyMultiplier = 2.0f;
 
     private float previousYRotation;
     private bool isVibrating = false;
@@ -36,6 +52,13 @@ public class DirectionalHaptics : MonoBehaviour
         if (deltaRotation > 180f) { deltaRotation -= 360f; }
         if (deltaRotation < -180f) { deltaRotation += 360f; }
 
+        // isHeavy가 true이면 햅틱 세기를 증폭시킵니다.
+        float currentStrong = isHeavy ? strongHaptic * heavyMultiplier : strongHaptic;
+        float currentWeak = isHeavy ? weakHaptic * heavyMultiplier : weakHaptic;
+        // 1을 넘지 않도록 값을 제한합니다.
+        currentStrong = Mathf.Clamp01(currentStrong);
+        currentWeak = Mathf.Clamp01(currentWeak);
+
         // 회전 변화량이 민감도 값보다 클 때만 햅틱을 실행합니다.
         if (Mathf.Abs(deltaRotation) > rotationThreshold)
         {
@@ -43,15 +66,15 @@ public class DirectionalHaptics : MonoBehaviour
             if (deltaRotation < 0)
             {
                 // 왼쪽 컨트롤러는 강하게, 오른쪽은 약하게
-                OVRInput.SetControllerVibration(1, strongHaptic, OVRInput.Controller.LTouch);
-                OVRInput.SetControllerVibration(1, weakHaptic, OVRInput.Controller.RTouch);
+                OVRInput.SetControllerVibration(strongFrequency, strongHaptic, OVRInput.Controller.LTouch);
+                OVRInput.SetControllerVibration(weakFrequency, weakHaptic, OVRInput.Controller.RTouch);
             }
             // 오른쪽으로 회전할 때 (값이 증가)
             else
             {
                 // 왼쪽 컨트롤러는 약하게, 오른쪽은 강하게
-                OVRInput.SetControllerVibration(1, weakHaptic, OVRInput.Controller.LTouch);
-                OVRInput.SetControllerVibration(1, strongHaptic, OVRInput.Controller.RTouch);
+                OVRInput.SetControllerVibration(weakFrequency, weakHaptic, OVRInput.Controller.LTouch);
+                OVRInput.SetControllerVibration(strongFrequency, strongHaptic, OVRInput.Controller.RTouch);
             }
             isVibrating = true;
         }
