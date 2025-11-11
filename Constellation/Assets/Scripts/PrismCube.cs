@@ -5,20 +5,38 @@ public class PrismCube : MonoBehaviour
     [Header("출력되는 빛 (자식 오브젝트)")]
     public GameObject outputRayA;
     public GameObject outputRayB;
-
+    public GameObject P_Particle;
     [Header("빛 분기 설정")]
     [Tooltip("큐브의 로컬 Z축(앞)을 기준으로 얼마나 옆으로 벌어질지 정합니다.")]
     public Vector3 localSplitDirA = new Vector3(0.3f, 0, 1.0f);
     public Vector3 localSplitDirB = new Vector3(-0.3f, 0, 1.0f);
 
+    [Header("머티리얼 설정")]
+    [Tooltip("빛이 닿았을 때 변경될 빛나는 머티리얼")]
+    public Material activatedMaterial; // 여기에 "ReflactLight" 머티리얼을 연결하세요.
+
+    private Material originalMaterial; // 큐브의 원래 머티리얼
+    private MeshRenderer meshRenderer;
+
     // 이번 프레임에 빛이 닿았는지 확인하기 위한 플래그
     private bool wasHitThisFrame = false;
+
 
     void Awake()
     {
         // 시작할 때는 두 빛줄기를 꺼둡니다.
         if (outputRayA != null) outputRayA.SetActive(false);
         if (outputRayB != null) outputRayB.SetActive(false);
+
+        meshRenderer = GetComponent<MeshRenderer>();
+        if (meshRenderer == null)
+        {
+            Debug.LogError("MeshRenderer가 이 오브젝트에 없습니다!", this);
+            return;
+        }
+
+        // 큐브의 원래 머티리얼을 저장합니다.
+        originalMaterial = meshRenderer.material;
     }
 
     /// <summary>
@@ -27,6 +45,13 @@ public class PrismCube : MonoBehaviour
     public void Activate(RaycastHit hit)
     {
         wasHitThisFrame = true;
+
+        if (meshRenderer != null &&meshRenderer.material != activatedMaterial)
+        {
+            meshRenderer.material = activatedMaterial;
+            P_Particle.SetActive(true);
+        }
+       
 
         if (outputRayA == null || outputRayB == null) return;
 
@@ -73,8 +98,13 @@ public class PrismCube : MonoBehaviour
         {
             if (outputRayA != null) outputRayA.SetActive(false);
             if (outputRayB != null) outputRayB.SetActive(false);
+            if (meshRenderer != null && meshRenderer.material != originalMaterial)
+            {
+                meshRenderer.material = originalMaterial;
+            }
+            P_Particle.SetActive(false);
         }
-
+        
         // 다음 프레임을 위해 플래그를 리셋합니다.
         wasHitThisFrame = false;
     }

@@ -52,6 +52,11 @@ public class LE : MonoBehaviour
 
                 if (hit.collider.CompareTag("Reflector"))
                 {
+                    ReflectorCube reflector = hit.collider.GetComponent<ReflectorCube>();
+                    if (reflector != null)
+                    {
+                        reflector.Activate();    
+                    }
                     if (isReflectable /*&& !isPrismOutput*/) // isPrismOutput을 체크하면 프리즘 출력이 반사 안 됨
                     {
                         dir = Vector3.Reflect(dir, hit.normal);
@@ -74,13 +79,16 @@ public class LE : MonoBehaviour
                 // --- ▼ 프리즘 로직 추가 ▼ ---
                 else if (hit.collider.CompareTag("Prism"))
                 {
+
                     // 프리즘에 닿으면, 해당 프리즘을 활성화시키고 현재 레이는 여기서 멈춤
                     PrismCube prism = hit.collider.GetComponent<PrismCube>();
                     if (prism != null)
                     {
                         // 프리즘에게 빛이 닿았다고 알림
                         prism.Activate(hit);
+                       
                     }
+                    
                     // 현재 LineRenderer는 여기서 종료
                     break;
                 }
