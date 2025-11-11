@@ -7,6 +7,8 @@ TagManager:
   - Target
   - Mirror
   - Reflector
+  - Item
+  - Prism
   layers:
   - Default
   - TransparentFX
