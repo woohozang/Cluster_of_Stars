@@ -71,8 +71,14 @@ public class LE : MonoBehaviour
                 else if (hit.collider.CompareTag("Target"))
                 {
                     ApplyHitColor(hit.collider.gameObject);
-                    hitParticlePrefab.SetActive(true);// 파티클 생성
+                    /*hitParticlePrefab.SetActive(true);// 파티클 생성
                     ClearParticle.SetActive(true);
+                    hitTarget = true;
+                    break;*/
+                    var star = hit.collider.GetComponent<EndStarController>();
+                    if (star != null)
+                        star.OnHit();
+
                     hitTarget = true;
                     break;
                 }
