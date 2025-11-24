@@ -77,7 +77,7 @@ public class SpringResistanceTransformer : MonoBehaviour, ITransformer
         float rotationSpeedY = _autoRotateComponent.rotationSpeed.y;
 
         // 4. 회전 방향에 따라 좌우 햅틱을 다르게 설정하여 매 프레임 갱신합니다.
-        if (rotationSpeedY < -rotationSpeedThreshold) // 회전 방향: 왼쪽 (Y값이 음수)
+        if (rotationSpeedY < rotationSpeedThreshold) // 회전 방향: 왼쪽 (Y값이 음수)
         {
             OVRInput.SetControllerVibration(strongFrequency, strongAmplitude, OVRInput.Controller.LTouch);
             OVRInput.SetControllerVibration(weakFrequency, weakAmplitude, OVRInput.Controller.RTouch);
