@@ -16,6 +16,10 @@ public class EndStarController : MonoBehaviour
     public GameObject ShineParticle;
     public GameObject clearParticle;   // SetActive()로 관리
 
+    [Header("자동 회전 제어")]
+    [Tooltip("엔드포인트 별을 자동 회전시키는 스크립트 (예: AutoRotate)를 드래그")]
+    public AutoRotate autoRotateScript;   // 없으면 비워둬도 됨
+
     private bool isHit = false;
     private bool isCleared = false;
 
@@ -49,7 +53,7 @@ public class EndStarController : MonoBehaviour
             float blendValue = Mathf.Lerp(100f, 0f, t);
             starMesh.SetBlendShapeWeight(blendShapeIndex, blendValue);
 
-            // 5초 경과 → 클리어 처리
+            // requiredTime 경과 → 클리어 처리
             if (timer >= requiredTime)
             {
                 StageClear();
@@ -57,7 +61,7 @@ public class EndStarController : MonoBehaviour
         }
         else
         {
-            // 빛이 닿지 않을 때 복귀(선택)
+            // 빛이 닿지 않을 때 서서히 되돌아가는 로직 (선택 사항)
             if (timer > 0f)
             {
                 timer -= Time.deltaTime;
@@ -85,12 +89,23 @@ public class EndStarController : MonoBehaviour
 
         Debug.Log("Stage Clear!");
 
+        // ★ 여기서 자동 회전만 끔
+        if (autoRotateScript != null)
+        {
+            // AutoRotate에 Pause/Resume 함수가 있다면:
+            autoRotateScript.enabled = false;
+
+            // 또는 단순히 컴포넌트 자체를 끄고 싶으면 아래처럼:
+            // autoRotateScript.enabled = false;
+        }
+
         if (clearParticle != null)
         {
-            defaultParticle.SetActive(false);
-            ShineParticle.SetActive(true);
+            if (defaultParticle != null) defaultParticle.SetActive(false);
+            if (ShineParticle != null) ShineParticle.SetActive(true);
             clearParticle.SetActive(true);
         }
-        // 추가: 문 열기 / 다음 스테이지 로딩 등 호출 가능
+
+        // TODO: 문 열기 / 다음 스테이지 로딩 등 추가 로직
     }
 }

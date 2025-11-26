@@ -9,8 +9,8 @@ public class LE : MonoBehaviour
     [Header("References")]
     public LineRenderer lineRenderer;
     public Color hitColor = Color.green;
-    public GameObject hitParticlePrefab; //  추가 (Inspector에 연결할 프리팹)
-    public GameObject ClearParticle;
+    //public GameObject hitParticlePrefab; //  추가 (Inspector에 연결할 프리팹)
+    //public GameObject ClearParticle;
 
     private MeshRenderer targetRenderer;
     private MaterialPropertyBlock block;
@@ -117,8 +117,8 @@ public class LE : MonoBehaviour
         if (!hitTarget)
         {
             // (기존 파티클 및 색상 초기화 로직)
-            hitParticlePrefab.SetActive(false);
-            ClearParticle.SetActive(false);
+           // hitParticlePrefab.SetActive(false);
+          //  ClearParticle.SetActive(false);
             if (activeParticle != null)
                 Destroy(activeParticle);
 
