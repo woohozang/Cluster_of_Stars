@@ -15,6 +15,7 @@ public class EndStarController : MonoBehaviour
     public GameObject defaultParticle;
     public GameObject ShineParticle;
     public GameObject clearParticle;   // SetActive()로 관리
+    public GameObject ClearEffect;
 
     [Header("자동 회전 제어")]
     [Tooltip("엔드포인트 별을 자동 회전시키는 스크립트 (예: AutoRotate)를 드래그")]
@@ -104,6 +105,7 @@ public class EndStarController : MonoBehaviour
             if (defaultParticle != null) defaultParticle.SetActive(false);
             if (ShineParticle != null) ShineParticle.SetActive(true);
             clearParticle.SetActive(true);
+            ClearEffect.SetActive(true);
         }
 
         // TODO: 문 열기 / 다음 스테이지 로딩 등 추가 로직
