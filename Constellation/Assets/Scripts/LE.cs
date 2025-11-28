@@ -3,7 +3,7 @@ using UnityEngine;
 public class LE : MonoBehaviour
 {
     [Header("Ray Settings")]
-    public int maxReflections = 8;
+    public int maxReflections = 30;
     public float maxDistance = 50f;
 
     [Header("References")]
@@ -61,6 +61,7 @@ public class LE : MonoBehaviour
                     {
                         dir = Vector3.Reflect(dir, hit.normal);
                         pos = hit.point;
+                        //pos = hit.point + dir * 0.01f;
                     }
                     else
                     {
@@ -88,10 +89,12 @@ public class LE : MonoBehaviour
 
                     // 프리즘에 닿으면, 해당 프리즘을 활성화시키고 현재 레이는 여기서 멈춤
                     PrismCube prism = hit.collider.GetComponent<PrismCube>();
+                    
                     if (prism != null)
                     {
                         // 프리즘에게 빛이 닿았다고 알림
                         prism.Activate(hit);
+                       
                        
                     }
                     

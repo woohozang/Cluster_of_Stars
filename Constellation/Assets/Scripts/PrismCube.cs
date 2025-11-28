@@ -1,33 +1,36 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class PrismCube : MonoBehaviour
 {
-    [Header("출력되는 빛 (자식 오브젝트)")]
-    public GameObject outputRayA;
-    public GameObject outputRayB;
+    // 각 출력 빛줄기에 대한 설정을 담는 클래스
+    [System.Serializable]
+    public class OutputRayConfig
+    {
+        [Tooltip("출력될 빛줄기 오브젝트 (LE 스크립트가 있어야 함)")]
+        public GameObject rayObject;
+
+        [Tooltip("이 빛줄기가 다른 거울에 반사될 수 있는지 여부")]
+        public bool canReflect = true;
+
+        [Tooltip("큐브의 로컬 Z축(앞)을 기준으로 얼마나 옆으로 벌어질지 방향 설정")]
+        public Vector3 localSplitDirection = new Vector3(0.3f, 0, 1.0f);
+    }
+
+    [Header("빛 분기 설정 (리스트로 관리)")]
+    public List<OutputRayConfig> outputRays = new List<OutputRayConfig>();
+
+    [Header("파티클 및 머티리얼")]
     public GameObject P_Particle;
-    [Header("빛 분기 설정")]
-    [Tooltip("큐브의 로컬 Z축(앞)을 기준으로 얼마나 옆으로 벌어질지 정합니다.")]
-    public Vector3 localSplitDirA = new Vector3(0.3f, 0, 1.0f);
-    public Vector3 localSplitDirB = new Vector3(-0.3f, 0, 1.0f);
-
-    [Header("머티리얼 설정")]
     [Tooltip("빛이 닿았을 때 변경될 빛나는 머티리얼")]
-    public Material activatedMaterial; // 여기에 "ReflactLight" 머티리얼을 연결하세요.
+    public Material activatedMaterial;
 
-    private Material originalMaterial; // 큐브의 원래 머티리얼
+    private Material originalMaterial;
     private MeshRenderer meshRenderer;
-
-    // 이번 프레임에 빛이 닿았는지 확인하기 위한 플래그
     private bool wasHitThisFrame = false;
-
 
     void Awake()
     {
-        // 시작할 때는 두 빛줄기를 꺼둡니다.
-        if (outputRayA != null) outputRayA.SetActive(false);
-        if (outputRayB != null) outputRayB.SetActive(false);
-
         meshRenderer = GetComponent<MeshRenderer>();
         if (meshRenderer == null)
         {
@@ -35,8 +38,14 @@ public class PrismCube : MonoBehaviour
             return;
         }
 
-        // 큐브의 원래 머티리얼을 저장합니다.
         originalMaterial = meshRenderer.material;
+
+        // 시작할 때 모든 빛줄기를 꺼둡니다.
+        foreach (var config in outputRays)
+        {
+            if (config.rayObject != null)
+                config.rayObject.SetActive(false);
+        }
     }
 
     /// <summary>
@@ -46,66 +55,58 @@ public class PrismCube : MonoBehaviour
     {
         wasHitThisFrame = true;
 
-        if (meshRenderer != null &&meshRenderer.material != activatedMaterial)
+        // 머티리얼 변경 및 파티클 활성화
+        if (meshRenderer != null && meshRenderer.material != activatedMaterial)
         {
             meshRenderer.material = activatedMaterial;
-            P_Particle.SetActive(true);
         }
-       
+        if (P_Particle != null) P_Particle.SetActive(true);
 
-        if (outputRayA == null || outputRayB == null) return;
-
-        // 1. 두 빛줄기를 활성화합니다.
-        outputRayA.SetActive(true);
-        outputRayB.SetActive(true);
-
-        // 2. 빛줄기의 시작 위치를 레이가 맞은 지점으로 설정합니다.
-        outputRayA.transform.position = hit.point;
-        outputRayB.transform.position = hit.point;
-
-        // 3. 큐브의 현재 회전(transform)을 기준으로 빛의 방향을 계산합니다.
-        // localSplitDirA를 월드 방향으로 변환합니다.
-        Vector3 worldDirA = transform.TransformDirection(localSplitDirA.normalized);
-        Vector3 worldDirB = transform.TransformDirection(localSplitDirB.normalized);
-
-        // 4. 두 빛줄기 오브젝트가 해당 방향을 바라보게 합니다.
-        // (LE.cs가 transform.forward를 기준으로 Raycast를 쏘기 때문)
-        outputRayA.transform.forward = worldDirA;
-        outputRayB.transform.forward = worldDirB;
-
-        // outputRayA의 LE 스크립트를 가져와 isReflectable 값을 설정합니다.
-        LE leA = outputRayA.GetComponent<LE>();
-        if (leA != null)
+        // 리스트에 등록된 모든 빛줄기 활성화 및 설정 적용
+        foreach (var config in outputRays)
         {
-            leA.isReflectable = false; // 예를 들어 A는 반사 가능
-            leA.isPrismOutput = true; // 프리즘에서 나온 빛이라고 표시
-        }
+            if (config.rayObject == null) continue;
 
-        // outputRayB의 LE 스크립트를 가져와 isReflectable 값을 설정합니다.
-        LE leB = outputRayB.GetComponent<LE>();
-        if (leB != null)
-        {
-            leB.isReflectable = true; // 예를 들어 B는 반사 불가능
-            leB.isPrismOutput = true; // 프리즘에서 나온 빛이라고 표시
+            // 1. 빛줄기 활성화
+            config.rayObject.SetActive(true);
+
+            // 2. 시작 위치 설정 (레이가 맞은 지점)
+            config.rayObject.transform.position = hit.point;
+
+            // 3. 방향 설정 (로컬 방향 -> 월드 방향)
+            Vector3 worldDir = transform.TransformDirection(config.localSplitDirection.normalized);
+            config.rayObject.transform.forward = worldDir;
+
+            // 4. LE 스크립트 설정 (반사 가능 여부 적용)
+            LE leScript = config.rayObject.GetComponent<LE>();
+            if (leScript != null)
+            {
+                leScript.isReflectable = config.canReflect; // 여기서 리스트의 설정을 적용!
+                leScript.isPrismOutput = true;
+            }
         }
     }
 
-    // Update가 끝난 후 호출되어 "꺼짐" 상태를 처리합니다.
     void LateUpdate()
     {
         // 이번 프레임에 Activate가 호출되지 않았다면 (빛이 빗나갔다면)
         if (!wasHitThisFrame)
         {
-            if (outputRayA != null) outputRayA.SetActive(false);
-            if (outputRayB != null) outputRayB.SetActive(false);
+            // 모든 빛줄기 비활성화
+            foreach (var config in outputRays)
+            {
+                if (config.rayObject != null)
+                    config.rayObject.SetActive(false);
+            }
+
+            // 머티리얼 원상 복구
             if (meshRenderer != null && meshRenderer.material != originalMaterial)
             {
                 meshRenderer.material = originalMaterial;
             }
-            P_Particle.SetActive(false);
+            if (P_Particle != null) P_Particle.SetActive(false);
         }
-        
-        // 다음 프레임을 위해 플래그를 리셋합니다.
+
         wasHitThisFrame = false;
     }
 }

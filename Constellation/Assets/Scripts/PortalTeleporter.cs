@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections; // 코루틴 사용을 위해 필요
+using System.Collections;
 
 public class PortalTeleporter : MonoBehaviour
 {
@@ -10,55 +10,47 @@ public class PortalTeleporter : MonoBehaviour
     [Tooltip("화면이 깜빡이는 속도 (초 단위)")]
     public float fadeDuration = 0.5f;
 
-    private bool isTeleporting = false; // 중복 이동 방지용
+    [Tooltip("이동 후 다음 이동까지 대기 시간 (초 단위)")]
+    public float cooldownTime = 2.0f; // 2초 동안 텔레포트 금지
+
+    // static으로 선언하여 모든 포털이 이 변수를 공유합니다.
+    // 즉, 어떤 포털이든 타고 이동 중이면 다른 포털도 작동하지 않습니다.
+    private static bool isGlobalTeleporting = false;
 
     private void OnTriggerEnter(Collider other)
     {
-        // 이미 이동 중이 아니고, 플레이어라면 실행
-        if (!isTeleporting && other.CompareTag("Player"))
-        {
-            // OVRCameraRig(플레이어 최상위 부모)를 찾습니다.
-            Transform playerRig = other.transform.root;
+        // 이미 누군가 이동 중이라면(쿨타임 중이라면) 무시
+        if (isGlobalTeleporting) return;
 
-            // 이동 시퀀스(코루틴) 시작
+        if (other.CompareTag("Player"))
+        {
+            Transform playerRig = other.transform.root;
             StartCoroutine(TeleportSequence(playerRig));
         }
     }
 
     private IEnumerator TeleportSequence(Transform playerRig)
     {
-        isTeleporting = true; // 이동 시작 체크
+        isGlobalTeleporting = true; // "나 이동 중이야! 다들 멈춰!"
 
-        // 1. 플레이어의 눈(CenterEyeAnchor)에서 OVRScreenFade 컴포넌트를 찾습니다.
-        // (보통 OVRCameraRig -> TrackingSpace -> CenterEyeAnchor에 있습니다.)
+        // 1. 페이드 아웃
         var screenFade = playerRig.GetComponentInChildren<OVRScreenFade>();
+        if (screenFade != null) screenFade.FadeOut();
 
-        // 2. 페이드 아웃 (화면 검게 만들기)
-        if (screenFade != null)
-        {
-            screenFade.FadeOut();
-        }
-
-        // 화면이 완전히 어두워질 때까지 대기
         yield return new WaitForSeconds(fadeDuration);
 
-        // 3. 플레이어 위치 이동 (순간이동)
+        // 2. 위치 이동
         playerRig.position = destinationPoint.position;
+        // playerRig.rotation = destinationPoint.rotation; // 필요하면 주석 해제
 
-        // (선택) 회전값도 맞추려면 아래 주석 해제
-        // playerRig.rotation = destinationPoint.rotation;
-
-        // 위치 이동 후 아주 잠깐 대기 (로딩/렌더링 안정화)
         yield return new WaitForSeconds(0.1f);
 
-        // 4. 페이드 인 (화면 다시 밝게 만들기)
-        if (screenFade != null)
-        {
-            screenFade.FadeIn();
-        }
+        // 3. 페이드 인
+        if (screenFade != null) screenFade.FadeIn();
 
-        // 이동 완료 후 플래그 해제 (잠시 후 다시 이동 가능하도록)
-        yield return new WaitForSeconds(1.0f);
-        isTeleporting = false;
+        // 4. 쿨타임 대기 (도착 후 2초 동안은 포털에 닿아도 무시함)
+        yield return new WaitForSeconds(cooldownTime);
+
+        isGlobalTeleporting = false; // "이제 이동 끝! 다시 작동 가능."
     }
 }
