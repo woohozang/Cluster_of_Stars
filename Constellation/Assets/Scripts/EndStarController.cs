@@ -1,25 +1,36 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class EndStarController : MonoBehaviour
 {
+    [Header("★ 맵 불빛 설정 (직접 연결)")]
+    [Tooltip("이 스테이지를 클리어하면 켜질 맵의 불빛(또는 UI) 오브젝트를 여기에 넣으세요.")]
+    public GameObject targetMapLight;
+
+    [Header("★ 클리어 조건 설정")]
+    [Tooltip("체크하면 아래 리스트에 있는 '일반 별'들이 모두 빛나야만 게이지가 찹니다.")]
+    public bool useNormalStarCondition = false;
+
+    [Tooltip("조건이 켜져 있을 때, 빛나야 하는 일반 별들의 목록")]
+    public List<NormalStar> requiredStars;
+
     [Header("BlendShape 설정")]
     public SkinnedMeshRenderer starMesh;
     public string blendShapeName = "Star_full";
     private int blendShapeIndex;
 
     [Header("시간 설정")]
-    public float requiredTime = 5f;    // 빛이 닿아야 하는 시간
+    public float requiredTime = 5f;
     private float timer = 0f;
 
     [Header("파티클")]
     public GameObject defaultParticle;
     public GameObject ShineParticle;
-    public GameObject clearParticle;   // SetActive()로 관리
+    public GameObject clearParticle;
     public GameObject ClearEffect;
 
     [Header("자동 회전 제어")]
-    [Tooltip("엔드포인트 별을 자동 회전시키는 스크립트 (예: AutoRotate)를 드래그")]
-    public AutoRotate autoRotateScript;   // 없으면 비워둬도 됨
+    public AutoRotate autoRotateScript;
 
     private bool isHit = false;
     private bool isCleared = false;
@@ -34,51 +45,65 @@ public class EndStarController : MonoBehaviour
         if (clearParticle != null)
             clearParticle.SetActive(false);
 
-        // BlendShape 기본 100으로 시작
+        // 시작할 때 쉐이프키 초기화
         starMesh.SetBlendShapeWeight(blendShapeIndex, 100f);
+
+        // 시작할 때 타겟 불빛은 꺼두는 게 안전함 (혹시 켜져있을까봐)
+        /* 만약 맵에서 직접 꺼두셨다면 이 코드는 없어도 됩니다. 
+           혹시 자동으로 꺼지길 원하면 아래 주석을 해제하세요.
+        */
+        // if (targetMapLight != null) targetMapLight.SetActive(false);
     }
 
     void Update()
     {
         if (isCleared) return;
 
-        if (isHit)
-        {
-            // 타이머 증가
-            timer += Time.deltaTime;
+        // 1. 엔드 포인트가 빛을 맞았는지 확인
+        // 2. 일반 별 조건이 켜져 있다면, 모든 별이 활성화되었는지 확인
+        bool canCharge = isHit;
 
+        if (canCharge && useNormalStarCondition)
+        {
+            foreach (var star in requiredStars)
+            {
+                if (star != null && !star.IsActive)
+                {
+                    canCharge = false;
+                    break;
+                }
+            }
+        }
+
+        // 조건 만족 시 게이지 충전
+        if (canCharge)
+        {
+            timer += Time.deltaTime;
             float t = timer / requiredTime;
             t = Mathf.Clamp01(t);
 
-            // 100 → 0 으로 줄어드는 값
             float blendValue = Mathf.Lerp(100f, 0f, t);
             starMesh.SetBlendShapeWeight(blendShapeIndex, blendValue);
 
-            // requiredTime 경과 → 클리어 처리
             if (timer >= requiredTime)
             {
                 StageClear();
             }
         }
-        else
+        else // 조건 불만족 시 게이지 감소
         {
-            // 빛이 닿지 않을 때 서서히 되돌아가는 로직 (선택 사항)
             if (timer > 0f)
             {
                 timer -= Time.deltaTime;
                 float t = timer / requiredTime;
                 t = Mathf.Clamp01(t);
-
                 float blendValue = Mathf.Lerp(100f, 0f, t);
                 starMesh.SetBlendShapeWeight(blendShapeIndex, blendValue);
             }
         }
-
-        // 매 프레임 hit 값 초기화 (Ray 스크립트가 매 프레임 OnHit() 호출해야 함)
         isHit = false;
     }
 
-    // Light(레이저) 스크립트에서 매 프레임 호출해줄 함수
     public void OnHit()
     {
         isHit = true;
@@ -87,19 +112,12 @@ public class EndStarController : MonoBehaviour
     void StageClear()
     {
         isCleared = true;
-
         Debug.Log("Stage Clear!");
 
-        // ★ 여기서 자동 회전만 끔
-        if (autoRotateScript != null)
-        {
-            // AutoRotate에 Pause/Resume 함수가 있다면:
-            autoRotateScript.enabled = false;
+        // 1. 자동 회전 끄기
+        if (autoRotateScript != null) autoRotateScript.enabled = false;
 
-            // 또는 단순히 컴포넌트 자체를 끄고 싶으면 아래처럼:
-            // autoRotateScript.enabled = false;
-        }
-
+        // 2. 파티클 효과 재생
         if (clearParticle != null)
         {
             if (defaultParticle != null) defaultParticle.SetActive(false);
@@ -108,6 +126,10 @@ public class EndStarController : MonoBehaviour
             ClearEffect.SetActive(true);
         }
 
-        // TODO: 문 열기 / 다음 스테이지 로딩 등 추가 로직
+        // 3. [수정됨] 직접 연결된 맵 불빛 켜기
+        if (targetMapLight != null)
+        {
+            targetMapLight.SetActive(true);
+        }
     }
 }

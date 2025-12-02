@@ -104,7 +104,21 @@ public class LE : MonoBehaviour
                 // --- ▲ 프리즘 로직 추가 ▲ ---
                 else
                 {
-                    // 그 외의 물체에 닿으면 그냥 멈춤
+                    // 1. 혹시 부딪힌 물체에 NormalStar 스크립트가 있는지 확인
+                    NormalStar normalStar = hit.collider.GetComponent<NormalStar>();
+
+                    if (normalStar != null)
+                    {
+                        // 2. 있다면 OnHit() 호출해서 파티클 켜기
+                        normalStar.OnHit();
+
+                        // 3. 별에 빛이 닿았으니 여기서 레이 멈춤 (뚫고 지나가지 않음)
+                        // 만약 뚫고 지나가게 하고 싶으면 이 break;를 지우고
+                        // pos = hit.point + dir * 0.01f; 로 업데이트 해주면 됩니다.
+                        break;
+                    }
+
+                    // NormalStar도 아니고 다른 태그도 아니면 그냥 벽이므로 멈춤
                     break;
                 }
             }
