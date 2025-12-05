@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 public class EndStarController : MonoBehaviour
 {
+    [Header("시네마틱 연결")]
+    public StageClearCinematic cinematicScript;
     [Header("★ 맵 불빛 설정 (직접 연결)")]
     [Tooltip("이 스테이지를 클리어하면 켜질 맵의 불빛(또는 UI) 오브젝트를 여기에 넣으세요.")]
     public GameObject targetMapLight;
@@ -131,5 +133,11 @@ public class EndStarController : MonoBehaviour
         {
             targetMapLight.SetActive(true);
         }
+        //시네마틱
+        if (cinematicScript != null)
+        {
+            cinematicScript.PlaySequence();
+        }
+        if (targetMapLight != null) targetMapLight.SetActive(true);
     }
 }
