@@ -1,20 +1,18 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Oculus.Interaction; // ★ 필수 추가!
 
 public class EndStarController : MonoBehaviour
 {
-    [Header("시네마틱 연결")]
-    public StageClearCinematic cinematicScript;
-    [Header("★ 맵 불빛 설정 (직접 연결)")]
-    [Tooltip("이 스테이지를 클리어하면 켜질 맵의 불빛(또는 UI) 오브젝트를 여기에 넣으세요.")]
+    [Header("★ 맵 불빛 설정")]
     public GameObject targetMapLight;
 
     [Header("★ 클리어 조건 설정")]
-    [Tooltip("체크하면 아래 리스트에 있는 '일반 별'들이 모두 빛나야만 게이지가 찹니다.")]
     public bool useNormalStarCondition = false;
-
-    [Tooltip("조건이 켜져 있을 때, 빛나야 하는 일반 별들의 목록")]
     public List<NormalStar> requiredStars;
+
+    [Header("시네마틱 연결")]
+    public StageClearCinematic cinematicScript;
 
     [Header("BlendShape 설정")]
     public SkinnedMeshRenderer starMesh;
@@ -36,6 +34,7 @@ public class EndStarController : MonoBehaviour
 
     private bool isHit = false;
     private bool isCleared = false;
+    private Grabbable grabbableComponent; // ★ 잡기 컴포넌트
 
     void Start()
     {
@@ -47,22 +46,16 @@ public class EndStarController : MonoBehaviour
         if (clearParticle != null)
             clearParticle.SetActive(false);
 
-        // 시작할 때 쉐이프키 초기화
         starMesh.SetBlendShapeWeight(blendShapeIndex, 100f);
 
-        // 시작할 때 타겟 불빛은 꺼두는 게 안전함 (혹시 켜져있을까봐)
-        /* 만약 맵에서 직접 꺼두셨다면 이 코드는 없어도 됩니다. 
-           혹시 자동으로 꺼지길 원하면 아래 주석을 해제하세요.
-        */
-        // if (targetMapLight != null) targetMapLight.SetActive(false);
+        // ★ Grabbable 컴포넌트 찾아두기
+        grabbableComponent = GetComponent<Grabbable>();
     }
 
     void Update()
     {
         if (isCleared) return;
 
-        // 1. 엔드 포인트가 빛을 맞았는지 확인
-        // 2. 일반 별 조건이 켜져 있다면, 모든 별이 활성화되었는지 확인
         bool canCharge = isHit;
 
         if (canCharge && useNormalStarCondition)
@@ -77,7 +70,6 @@ public class EndStarController : MonoBehaviour
             }
         }
 
-        // 조건 만족 시 게이지 충전
         if (canCharge)
         {
             timer += Time.deltaTime;
@@ -92,7 +84,7 @@ public class EndStarController : MonoBehaviour
                 StageClear();
             }
         }
-        else // 조건 불만족 시 게이지 감소
+        else
         {
             if (timer > 0f)
             {
@@ -116,10 +108,17 @@ public class EndStarController : MonoBehaviour
         isCleared = true;
         Debug.Log("Stage Clear!");
 
+        // ★ [핵심] 강제로 손 놓게 만들기
+        // Grabbable 컴포넌트를 끄면 잡고 있던 손이 즉시 풀립니다.
+        if (grabbableComponent != null)
+        {
+            grabbableComponent.enabled = false;
+        }
+
         // 1. 자동 회전 끄기
         if (autoRotateScript != null) autoRotateScript.enabled = false;
 
-        // 2. 파티클 효과 재생
+        // 2. 파티클 효과
         if (clearParticle != null)
         {
             if (defaultParticle != null) defaultParticle.SetActive(false);
@@ -128,16 +127,13 @@ public class EndStarController : MonoBehaviour
             ClearEffect.SetActive(true);
         }
 
-        // 3. [수정됨] 직접 연결된 맵 불빛 켜기
-        if (targetMapLight != null)
-        {
-            targetMapLight.SetActive(true);
-        }
-        //시네마틱
+        // 3. 맵 불빛 켜기
+        if (targetMapLight != null) targetMapLight.SetActive(true);
+
+        // 4. 시네마틱 재생 (이동)
         if (cinematicScript != null)
         {
             cinematicScript.PlaySequence();
         }
-        if (targetMapLight != null) targetMapLight.SetActive(true);
     }
 }
