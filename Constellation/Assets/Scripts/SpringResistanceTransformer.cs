@@ -1,46 +1,42 @@
 ﻿using UnityEngine;
 using Oculus.Interaction;
 
-/// <summary>
-/// 자동으로 회전하는 별에 “스프링 같은 저항”을 주면서,
-/// 잡힌 동안에는 사용자가 직접 회전시킬 수 있고,
-/// 회전 방향 + 손의 주도권(컨트롤러 속도)에 따라 좌/우 햅틱을 다르게 준다.
-/// </summary>
 public class SpringResistanceTransformer : MonoBehaviour, ITransformer
 {
-    [Tooltip("실제 회전을 담당하는 기본 Transformer (예: TwoGrabRotateTransformer)")]
+    [Tooltip("TwoGrabRotateTransformer 연결")]
     [SerializeField, Interface(typeof(ITransformer))]
     private UnityEngine.Object _baseTransformer;
     private ITransformer BaseTransformer { get; set; }
 
     [Header("자동 회전 제어")]
-    [Tooltip("별을 자동으로 회전시키는 스크립트(AutoRotate)를 지정")]
-    [SerializeField]
-    private AutoRotate _autoRotate;
+    [Tooltip("AutoRotate 스크립트 연결")]
+    [SerializeField] private MonoBehaviour _autoRotationScript;
 
-    // ------------------ 햅틱 세팅 ------------------
+    [Header("역감 햅틱 기본 설정")]
+    [Tooltip("기본 진동 세기")]
+    [Range(0f, 1f)] public float baseAmplitude = 0.2f;
 
-    [Header("기본 회전 저항 햅틱")]
-    [Tooltip("저항감을 주는 기본 강한 진폭")]
-    [Range(0f, 1f)] public float baseStrongAmplitude = 0.7f;
-    [Range(0f, 1f)] public float baseWeakAmplitude = 0.25f;
-    [Range(0f, 1f)] public float baseStrongFrequency = 0.85f;
-    [Range(0f, 1f)] public float baseWeakFrequency = 0.25f;
+    [Header("왼손/오른손 개별 설정 (중요)")]
+    [Tooltip("왼손 햅틱 강도 배율 (별이 오른쪽으로 돌 때 왼손에 더 강한 자극을 주기 위함)")]
+    [Range(1f, 5f)] public float leftHandMultiplier = 2.0f; // 왼손 기본 2배
 
-    [Header("손 주도권 보정")]
-    [Tooltip("컨트롤러 속도 기준(이 값보다 커야 '움직이고 있다'고 판단)")]
-    public float velocityThreshold = 0.1f;
-    [Tooltip("주도하는 손에 추가로 더해줄 진폭(+α)")]
-    [Range(0f, 1f)] public float leaderAmplitudeBoost = 0.2f;
+    [Tooltip("오른손 햅틱 강도 배율")]
+    [Range(0.1f, 3f)] public float rightHandMultiplier = 1.0f;
 
-    [Header("회전 속도 기준")]
-    [Tooltip("별의 AutoRotate 회전 속도 Y 성분 절대값이 이 값보다 커야 저항 햅틱을 냄")]
-    public float rotationSpeedThreshold = 0.1f;
+    [Header("동적 저항 설정")]
+    [Tooltip("회전 반대 방향(역행)으로 힘을 줄 때 추가되는 강도")]
+    [Range(0f, 5f)] public float resistanceMultiplier = 3.0f; // 저항 시 더 강하게
 
+    [Tooltip("회전 같은 방향(순행)으로 밀어줄 때 줄어드는 비율")]
+    [Range(0f, 1f)] public float assistanceMultiplier = 0.5f;
+
+    [Range(0f, 1f)] public float minFrequency = 0.2f;
+    [Range(0f, 1f)] public float maxFrequency = 1.0f;
+
+    private Transform trackingSpace;
     private IGrabbable _grabbable;
-
-    // 회전 축 (기본은 Y축 기준 회전한다고 가정)
-    private Vector3 _worldRotationAxis = Vector3.up;
+    private Quaternion _restingRotation;
+    private AutoRotate _autoRotateComponent;
 
     public void Initialize(IGrabbable grabbable)
     {
@@ -48,129 +44,119 @@ public class SpringResistanceTransformer : MonoBehaviour, ITransformer
         BaseTransformer = _baseTransformer as ITransformer;
         BaseTransformer.Initialize(grabbable);
 
-        // 회전축을 오브젝트의 up 기준으로 쓰고 싶으면 아래 한 줄 사용
-        _worldRotationAxis = transform.up;
+        if (_autoRotationScript != null)
+            _autoRotateComponent = _autoRotationScript as AutoRotate;
+
+        if (Camera.main != null && Camera.main.transform.parent != null)
+        {
+            trackingSpace = Camera.main.transform.parent;
+        }
+        else
+        {
+            var rig = FindObjectOfType<OVRCameraRig>();
+            if (rig != null) trackingSpace = rig.trackingSpace;
+        }
     }
 
     public void BeginTransform()
     {
         BaseTransformer.BeginTransform();
+        _restingRotation = _grabbable.Transform.rotation;
 
-        // 잡는 순간 자동 회전은 일시정지
-        if (_autoRotate != null)
-        {
-            _autoRotate.PauseRotate();
-        }
-
-        // 잡힌 직후에도 바로 저항 햅틱이 느껴지도록
-        UpdateHaptics();
+        if (_autoRotateComponent != null) _autoRotateComponent.enabled = false;
     }
 
     public void UpdateTransform()
     {
-        // 원래 회전 로직(두 손 회전 등)을 그대로 수행
+        // 1. 실제 회전 적용
         BaseTransformer.UpdateTransform();
 
-        // 잡는 동안 매 프레임 햅틱 갱신
-        UpdateHaptics();
+        // --- 햅틱 계산 ---
+        if (_autoRotateComponent != null)
+        {
+            float autoSpeedY = _autoRotateComponent.rotationSpeed.y;
+
+            // 왼손 계산 (isLeftHand: true)
+            ApplyHandHaptics(OVRInput.Controller.LTouch, autoSpeedY, true);
+
+            // 오른손 계산 (isLeftHand: false)
+            ApplyHandHaptics(OVRInput.Controller.RTouch, autoSpeedY, false);
+        }
     }
 
     public void EndTransform()
     {
         BaseTransformer.EndTransform();
-
-        // 햅틱 꺼주기
         StopHaptics();
-
-        // 놓으면 다시 자동 회전 재개
-        if (_autoRotate != null)
-        {
-            _autoRotate.ResumeRotate();
-        }
+        if (_autoRotateComponent != null) _autoRotateComponent.enabled = true;
     }
 
-    // ------------------ 내부 로직 ------------------
-
-    /// <summary>
-    /// 별의 회전 방향(+Y / -Y)에 따라 "기본 저항"을 어느 손에 줄지 정하고,
-    /// 컨트롤러 속도(누가 더 세게 움직이는지)에 따라 주도권 보정을 한다.
-    /// </summary>
-    private void UpdateHaptics()
+    // ★ [핵심 수정] isLeftHand 파라미터 추가 및 로직 단순화
+    void ApplyHandHaptics(OVRInput.Controller controller, float autoSpeedY, bool isLeftHand)
     {
-        if (_autoRotate == null)
+        float handTorque = CalculateHandTorque(controller);
+        float handSpeed = Mathf.Abs(handTorque);
+
+        // 1. 기본 햅틱 (잡고만 있어도 느껴짐)
+        float currentAmplitude = baseAmplitude;
+
+        // ★ [왼손 강제 강화] 
+        // 왼손이면 설정한 배율(예: 2배)만큼 무조건 더 세게 줍니다.
+        if (isLeftHand)
         {
-            StopHaptics();
-            return;
-        }
-
-        float autoY = _autoRotate.rotationSpeed.y;
-
-        // 회전이 거의 없다면(정지에 가까우면) 햅틱도 끔
-        if (Mathf.Abs(autoY) < rotationSpeedThreshold)
-        {
-            StopHaptics();
-            return;
-        }
-
-        // -------- 1) 기본 저항: 회전 방향 반대손에 더 강하게 --------
-        // 오른쪽(시계 방향, +Y)으로 돌고 있다 → 왼손이 더 많이 버티는 느낌을 주고 싶다고 가정
-        bool rotatingRight = autoY > 0f;
-
-        float leftAmp = baseWeakAmplitude;
-        float rightAmp = baseWeakAmplitude;
-        float leftFreq = baseWeakFrequency;
-        float rightFreq = baseWeakFrequency;
-
-        if (rotatingRight)
-        {
-            // 오른쪽으로 돌아갈 때 왼손에 기본 저항 강하게
-            leftAmp = baseStrongAmplitude;
-            leftFreq = baseStrongFrequency;
+            currentAmplitude *= leftHandMultiplier;
         }
         else
         {
-            // 왼쪽(-Y)으로 돌아갈 때 오른손에 기본 저항 강하게
-            rightAmp = baseStrongAmplitude;
-            rightFreq = baseStrongFrequency;
+            currentAmplitude *= rightHandMultiplier;
         }
 
-        // -------- 2) 손 주도권 판단: 어느 손이 더 세게 움직이는가 --------
-        // 로컬 컨트롤러 속도
-        Vector3 lVelLocal = OVRInput.GetLocalControllerVelocity(OVRInput.Controller.LTouch);
-        Vector3 rVelLocal = OVRInput.GetLocalControllerVelocity(OVRInput.Controller.RTouch);
-
-        // 회전축 방향 성분만 보려면 축으로 투영 (월드 회전축 기준)
-        Vector3 lVelWorld = OVRInput.GetLocalControllerVelocity(OVRInput.Controller.LTouch);
-        Vector3 rVelWorld = OVRInput.GetLocalControllerVelocity(OVRInput.Controller.RTouch);
-
-        float lAlongAxis = Vector3.Dot(lVelWorld, _worldRotationAxis);
-        float rAlongAxis = Vector3.Dot(rVelWorld, _worldRotationAxis);
-
-        float lMag = Mathf.Abs(lAlongAxis);
-        float rMag = Mathf.Abs(rAlongAxis);
-
-        // 둘 다 거의 안 움직이면 기본 저항만 유지
-        if (lMag < velocityThreshold && rMag < velocityThreshold)
+        // 2. 동적 저항 계산 (움직일 때 추가 햅틱)
+        if (handSpeed > 0.05f)
         {
-            // do nothing, keep base values
-        }
-        else if (lMag > rMag)
-        {
-            // 왼손이 더 세게 움직이는 중 → 왼손이 주도
-            leftAmp = Mathf.Clamp01(leftAmp + leaderAmplitudeBoost);
-        }
-        else if (rMag > lMag)
-        {
-            // 오른손이 더 세게 움직이는 중 → 오른손이 주도
-            rightAmp = Mathf.Clamp01(rightAmp + leaderAmplitudeBoost);
+            // 방향 비교 (반대면 저항)
+            bool isResisting = (autoSpeedY * handTorque) < 0;
+
+            if (isResisting)
+            {
+                // 역행(왼쪽으로 돌림): 속도에 비례해서 강도 "추가" (+)
+                // 기존 강도에 + (속도 * 저항계수)를 더해서 확 세지게 만듦
+                currentAmplitude += (handSpeed * 0.1f) * resistanceMultiplier;
+            }
+            else
+            {
+                // 순행(오른쪽으로 돌림): 강도 "감소" (*)
+                currentAmplitude *= assistanceMultiplier;
+            }
         }
 
-        // -------- 3) 최종 햅틱 적용 --------
-        OVRInput.SetControllerVibration(leftFreq, leftAmp, OVRInput.Controller.LTouch);
-        OVRInput.SetControllerVibration(rightFreq, rightAmp, OVRInput.Controller.RTouch);
+        // 3. 주파수 및 최종 적용
+        // 저항 중이거나 왼손일 때는 좀 더 거친 주파수 사용
+        float targetFreq = (isLeftHand || (handSpeed > 0.05f && (autoSpeedY * handTorque) < 0)) ? maxFrequency : minFrequency;
+
+        currentAmplitude = Mathf.Clamp01(currentAmplitude);
+        OVRInput.SetControllerVibration(targetFreq, currentAmplitude, controller);
     }
 
-    private void StopHaptics()
+    float CalculateHandTorque(OVRInput.Controller controller)
+    {
+        Vector3 localVel = OVRInput.GetLocalControllerVelocity(controller);
+        Vector3 localPos = OVRInput.GetLocalControllerPosition(controller);
+
+        Vector3 worldVel = localVel;
+        Vector3 worldPos = localPos;
+
+        if (trackingSpace != null)
+        {
+            worldVel = trackingSpace.TransformDirection(localVel);
+            worldPos = trackingSpace.TransformPoint(localPos);
+        }
+
+        Vector3 r = worldPos - transform.position;
+        return (r.z * worldVel.x) - (r.x * worldVel.z);
+    }
+
+    void StopHaptics()
     {
         OVRInput.SetControllerVibration(0, 0, OVRInput.Controller.LTouch);
         OVRInput.SetControllerVibration(0, 0, OVRInput.Controller.RTouch);

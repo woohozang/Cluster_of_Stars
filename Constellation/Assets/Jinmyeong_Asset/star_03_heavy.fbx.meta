@@ -3,7 +3,27 @@ guid: 4d105e855b8c63b4e9372082201bbd67
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mirror
+    second: {fileID: 2100000, guid: 89d2844ab4383f549abcf45198bacdea, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mirror_outside
+    second: {fileID: 2100000, guid: 960b5cef37c17c848ae4960774004ee6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Star_tex
+    second: {fileID: 2100000, guid: 040d5a505535cbe42ad457c7eb752e02, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: cast iron 2,5 kg
+    second: {fileID: 2100000, guid: 9ba41d77bed30bc40989f7848faf89a3, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
