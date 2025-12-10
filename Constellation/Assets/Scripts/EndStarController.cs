@@ -36,6 +36,10 @@ public class EndStarController : MonoBehaviour
     private bool isCleared = false;
     private Grabbable grabbableComponent; // ★ 잡기 컴포넌트
 
+    [Header("★ 트랜스포머 연결 (필수)")]
+    // ★ [추가] 트랜스포머 스크립트를 여기에 연결하세요
+    public SpringResistanceTransformer resistanceTransformer;
+
     void Start()
     {
         if (starMesh == null)
@@ -50,6 +54,9 @@ public class EndStarController : MonoBehaviour
 
         // ★ Grabbable 컴포넌트 찾아두기
         grabbableComponent = GetComponent<Grabbable>();
+
+        if (resistanceTransformer == null)
+            resistanceTransformer = GetComponent<SpringResistanceTransformer>();
     }
 
     void Update()
@@ -108,15 +115,21 @@ public class EndStarController : MonoBehaviour
         isCleared = true;
         Debug.Log("Stage Clear!");
 
-        // ★ [핵심] 강제로 손 놓게 만들기
-        // Grabbable 컴포넌트를 끄면 잡고 있던 손이 즉시 풀립니다.
+        // ★ [핵심 추가] 트랜스포머에게 "클리어됐다"고 알림 (회전 재실행 방지)
+        if (resistanceTransformer != null)
+        {
+            resistanceTransformer.isStageCleared = true;
+        }
+
+        // 1. 자동 회전 끄기 (이제 트랜스포머가 다시 켜지 않음)
+        if (autoRotateScript != null) autoRotateScript.enabled = false;
+
+        // ★ [순서 중요] 잡기를 해제하면 EndTransform이 호출됨
+        // 위에서 isStageCleared를 true로 했으므로, 이제 안전하게 잡기를 풀 수 있음
         if (grabbableComponent != null)
         {
             grabbableComponent.enabled = false;
         }
-
-        // 1. 자동 회전 끄기
-        if (autoRotateScript != null) autoRotateScript.enabled = false;
 
         // 2. 파티클 효과
         if (clearParticle != null)

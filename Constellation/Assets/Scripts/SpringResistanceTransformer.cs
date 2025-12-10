@@ -38,6 +38,8 @@ public class SpringResistanceTransformer : MonoBehaviour, ITransformer
     private Quaternion _restingRotation;
     private AutoRotate _autoRotateComponent;
 
+    public bool isStageCleared = false;
+
     public void Initialize(IGrabbable grabbable)
     {
         _grabbable = grabbable;
@@ -88,7 +90,10 @@ public class SpringResistanceTransformer : MonoBehaviour, ITransformer
     {
         BaseTransformer.EndTransform();
         StopHaptics();
-        if (_autoRotateComponent != null) _autoRotateComponent.enabled = true;
+        if (_autoRotateComponent != null && !isStageCleared)
+        {
+            _autoRotateComponent.enabled = true;
+        }
     }
 
     // ★ [핵심 수정] isLeftHand 파라미터 추가 및 로직 단순화
