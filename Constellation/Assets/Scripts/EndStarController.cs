@@ -10,6 +10,7 @@ public class EndStarController : MonoBehaviour
     [Header("★ 클리어 조건 설정")]
     public bool useNormalStarCondition = false;
     public List<NormalStar> requiredStars;
+    public ReflectorCube requiredRotateStar;
 
     [Header("시네마틱 연결")]
     public StageClearCinematic cinematicScript;
@@ -74,6 +75,10 @@ public class EndStarController : MonoBehaviour
                     canCharge = false;
                     break;
                 }
+            }
+            if (requiredRotateStar != null && !requiredRotateStar.wasHitThisFrame)
+            {
+                canCharge = false;
             }
         }
 

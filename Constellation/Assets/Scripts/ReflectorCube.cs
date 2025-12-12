@@ -10,7 +10,7 @@ public class ReflectorCube : MonoBehaviour
 
     private Material originalMaterial; // 큐브의 원래 머티리얼
     private MeshRenderer meshRenderer;
-    private bool wasHitThisFrame = false;
+    public bool wasHitThisFrame = false;
 
     void Awake()
     {

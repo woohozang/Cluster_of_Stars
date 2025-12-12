@@ -5,6 +5,11 @@ using System.Collections;
 
 public class StageClearCinematic : MonoBehaviour
 {
+    [Header("★ 필수 할당")]
+    public Transform playerRig;       // OVRCameraRig (최상위 부모)
+    public Transform centerEyeAnchor; // OVRCameraRig > TrackingSpace > CenterEyeAnchor
+    public Transform targetView;      // 바라봐야 할 대상 (엔딩 화면, 주인공 등)
+
     [Header("위치 설정")]
     [Tooltip("UI를 감상할 별도 공간의 플레이어 위치 (MovieRoom 안)")]
     public Transform movieRoomPoint;
@@ -43,8 +48,34 @@ public class StageClearCinematic : MonoBehaviour
         SetAlpha(clearText, 0);
     }
 
+    public void AlignPlayerViewToTarget()
+    {
+        if (playerRig == null || centerEyeAnchor == null || targetView == null)
+        {
+            Debug.LogError("PlayerRig, CenterEyeAnchor, TargetView를 모두 연결해주세요!");
+            return;
+        }
+
+        // 1. 목표 방향 벡터 계산 (높이 y축 무시)
+        Vector3 directionToTarget = targetView.position - playerRig.position;
+        directionToTarget.y = 0;
+        directionToTarget.Normalize();
+
+        // 2. 현재 내 머리(카메라)가 보고 있는 방향 (높이 y축 무시)
+        Vector3 currentHeadDir = centerEyeAnchor.forward;
+        currentHeadDir.y = 0;
+        currentHeadDir.Normalize();
+
+        // 3. 두 방향 사이의 각도 차이 계산 (Y축 기준)
+        float angleDiff = Vector3.SignedAngle(currentHeadDir, directionToTarget, Vector3.up);
+
+        // 4. 차이만큼 몸통(Rig)을 회전시켜서 보정
+        playerRig.Rotate(Vector3.up, angleDiff);
+    }
+
     public void PlaySequence()
     {
+        AlignPlayerViewToTarget();
         StartCoroutine(Routine());
     }
 

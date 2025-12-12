@@ -3,7 +3,27 @@ guid: 8622b2ef72d77814d9e74bef8d7438fa
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mirror
+    second: {fileID: 2100000, guid: bfc03de65d429094f9f6165aaf4a2c84, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mirror_outside
+    second: {fileID: 2100000, guid: b88b5b8e19819784eb5c8ffba03384a0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Plastic blue
+    second: {fileID: 2100000, guid: 482543107165d7844972b19cbd934b47, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Star_tex
+    second: {fileID: 2100000, guid: 4070516fef5230e4bb0606c7acee89fe, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
