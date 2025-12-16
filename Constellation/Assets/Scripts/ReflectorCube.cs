@@ -5,12 +5,14 @@ public class ReflectorCube : MonoBehaviour
 {
     [Header("머티리얼 설정")]
     [Tooltip("빛이 닿았을 때 변경될 빛나는 머티리얼")]
-    public Material activatedMaterial; // 여기에 "ReflactLight" 머티리얼을 연결하세요.
+    public Material activatedMaterial;
     public GameObject R_Particle;
 
-    private Material originalMaterial; // 큐브의 원래 머티리얼
+    private Material originalMaterial;
     private MeshRenderer meshRenderer;
-    public bool wasHitThisFrame = false;
+
+    // ★ [수정 1] 변수 이름을 EndStarController가 찾는 'isHit'으로 변경했습니다.
+    public bool isHit = false;
 
     void Awake()
     {
@@ -21,40 +23,40 @@ public class ReflectorCube : MonoBehaviour
             return;
         }
 
-        // 큐브의 원래 머티리얼을 저장합니다.
         originalMaterial = meshRenderer.material;
     }
 
     /// <summary>
-    /// LE.cs가 호출하여 이 큐브를 활성화시킵니다.
+    /// 빛을 쏘는 스크립트(LaserEmitter 등)가 호출하여 이 큐브를 활성화시킵니다.
     /// </summary>
     public void Activate()
     {
-        wasHitThisFrame = true;
+        // ★ [수정 2] 빛이 닿았으므로 true로 설정
+        isHit = true;
 
-        // 머티리얼이 이미 activatedMaterial이 아니라면 변경합니다.
         if (meshRenderer.material != activatedMaterial)
         {
             meshRenderer.material = activatedMaterial;
-            R_Particle.SetActive(true);
+            if (R_Particle != null) R_Particle.SetActive(true);
         }
     }
 
     // 모든 Update가 끝난 후 호출됩니다.
     void LateUpdate()
     {
-        // 이번 프레임에 Activate()가 호출되지 않았다면 (빛이 빗나갔다면)
-        if (!wasHitThisFrame)
+        // ★ [수정 3] 이번 프레임에 빛이 닿지 않았다면 (isHit이 false라면)
+        if (!isHit)
         {
-            // 머티리얼이 원래대로 돌아가야 한다면 변경합니다.
             if (meshRenderer.material != originalMaterial)
             {
                 meshRenderer.material = originalMaterial;
             }
-            R_Particle.SetActive(false);
+            if (R_Particle != null) R_Particle.SetActive(false);
         }
 
-        // 다음 프레임을 위해 플래그를 리셋합니다.
-        wasHitThisFrame = false;
+        // ★ [수정 4] 다음 프레임을 위해 리셋
+        // 주의: EndStarController가 이 값을 읽기 전에 리셋되면 안 되므로, 
+        // Project Settings > Script Execution Order에서 EndStarController를 먼저 실행되게 설정하는 것이 좋습니다.
+        isHit = false;
     }
 }

@@ -1,115 +1,118 @@
 using UnityEngine;
-using System.Collections.Generic;
-using Oculus.Interaction; // ★ 필수 추가!
+using Oculus.Interaction; // 오큘러스 인터랙션 필수
 
 public class EndStarController : MonoBehaviour
 {
-    [Header("★ 맵 불빛 설정")]
-    public GameObject targetMapLight;
+    [Header("★ 스테이지 설정")]
+    [Tooltip("이 별이 몇 번째 스테이지의 엔딩인지 설정하세요. (0 = 1스테이지, 1 = 2스테이지...)")]
+    public int stageIndex = 0;
 
-    [Header("★ 클리어 조건 설정")]
-    public bool useNormalStarCondition = false;
-    public List<NormalStar> requiredStars;
-    public ReflectorCube requiredRotateStar;
+    [Header("★ 클리어 조건 (직전 별 감지)")]
+    [Tooltip("엔드 포인트에 빛을 쏘는 바로 직전의 별(또는 큐브)을 넣으세요. (NormalStar 또는 ReflectorCube)")]
+    public GameObject lastStarToCheck;
 
-    [Header("시네마틱 연결")]
-    public StageClearCinematic cinematicScript;
-
-    [Header("BlendShape 설정")]
+    [Header("BlendShape 설정 (게이지)")]
     public SkinnedMeshRenderer starMesh;
     public string blendShapeName = "Star_full";
     private int blendShapeIndex;
 
     [Header("시간 설정")]
+    [Tooltip("게이지가 꽉 차는데 걸리는 시간")]
     public float requiredTime = 5f;
     private float timer = 0f;
 
-    [Header("파티클")]
-    public GameObject defaultParticle;
-    public GameObject ShineParticle;
-    public GameObject clearParticle;
-    public GameObject ClearEffect;
-
-    [Header("자동 회전 제어")]
+    [Header("제어할 컴포넌트 (자동 할당 시도함)")]
     public AutoRotate autoRotateScript;
-
-    private bool isHit = false;
-    private bool isCleared = false;
-    private Grabbable grabbableComponent; // ★ 잡기 컴포넌트
-
-    [Header("★ 트랜스포머 연결 (필수)")]
-    // ★ [추가] 트랜스포머 스크립트를 여기에 연결하세요
     public SpringResistanceTransformer resistanceTransformer;
+    private Grabbable grabbableComponent;
+
+    // 내부 상태 변수
+    private bool isHit = false;    // 이번 프레임에 빛이 닿았는가?
+    private bool isCleared = false; // 이미 클리어했는가?
 
     void Start()
     {
-        if (starMesh == null)
-            starMesh = GetComponent<SkinnedMeshRenderer>();
+        // 1. BlendShape 초기화
+        if (starMesh == null) starMesh = GetComponent<SkinnedMeshRenderer>();
+        if (starMesh != null)
+        {
+            blendShapeIndex = starMesh.sharedMesh.GetBlendShapeIndex(blendShapeName);
+            starMesh.SetBlendShapeWeight(blendShapeIndex, 100f); // 100(비어있음)으로 시작
+        }
 
-        blendShapeIndex = starMesh.sharedMesh.GetBlendShapeIndex(blendShapeName);
-
-        if (clearParticle != null)
-            clearParticle.SetActive(false);
-
-        starMesh.SetBlendShapeWeight(blendShapeIndex, 100f);
-
-        // ★ Grabbable 컴포넌트 찾아두기
+        // 2. 물리/상호작용 컴포넌트 가져오기
         grabbableComponent = GetComponent<Grabbable>();
-
-        if (resistanceTransformer == null)
-            resistanceTransformer = GetComponent<SpringResistanceTransformer>();
+        if (resistanceTransformer == null) resistanceTransformer = GetComponent<SpringResistanceTransformer>();
+        if (autoRotateScript == null) autoRotateScript = GetComponent<AutoRotate>();
     }
 
-    void Update()
+    // 실행 순서 이슈 방지를 위해 LateUpdate 사용
+    void LateUpdate()
     {
         if (isCleared) return;
 
-        bool canCharge = isHit;
+        // --- 1. 충전 가능 여부 판단 ---
+        bool canCharge = isHit; // 물리적으로 Ray가 닿았는가?
 
-        if (canCharge && useNormalStarCondition)
+        // 직전 별(Last Star)이 켜져 있는지 확인 (꼼수 방지)
+        if (canCharge && lastStarToCheck != null)
         {
-            foreach (var star in requiredStars)
+            bool isLastStarActive = false;
+
+            // (A) NormalStar 스크립트인지 확인
+            if (lastStarToCheck.TryGetComponent(out NormalStar normalStar))
             {
-                if (star != null && !star.IsActive)
-                {
-                    canCharge = false;
-                    break;
-                }
+                if (normalStar.IsActive) isLastStarActive = true;
             }
-            if (requiredRotateStar != null && !requiredRotateStar.wasHitThisFrame)
+            // (B) ReflectorCube 스크립트인지 확인
+            else if (lastStarToCheck.TryGetComponent(out ReflectorCube reflector))
+            {
+                // ReflectorCube.cs에 'isHit' 변수가 있어야 함 (이전 질문에서 수정함)
+                if (reflector.isHit) isLastStarActive = true;
+            }
+
+            // 직전 별이 꺼져있다면 충전 불허
+            if (!isLastStarActive)
             {
                 canCharge = false;
             }
         }
 
+        // --- 2. 게이지 충전 및 쉐이프키 애니메이션 ---
         if (canCharge)
         {
             timer += Time.deltaTime;
             float t = timer / requiredTime;
             t = Mathf.Clamp01(t);
 
-            float blendValue = Mathf.Lerp(100f, 0f, t);
-            starMesh.SetBlendShapeWeight(blendShapeIndex, blendValue);
+            // 게이지 차오르는 연출 (100 -> 0)
+            if (starMesh != null)
+                starMesh.SetBlendShapeWeight(blendShapeIndex, Mathf.Lerp(100f, 0f, t));
 
+            // 시간 충족 시 클리어
             if (timer >= requiredTime)
-            {
                 StageClear();
-            }
         }
         else
         {
+            // 조건 불충족 시 게이지 감소 (2배 속도로 빠르게 감소)
             if (timer > 0f)
             {
-                timer -= Time.deltaTime;
+                timer -= Time.deltaTime * 2f;
+                if (timer < 0) timer = 0;
+
                 float t = timer / requiredTime;
                 t = Mathf.Clamp01(t);
-                float blendValue = Mathf.Lerp(100f, 0f, t);
-                starMesh.SetBlendShapeWeight(blendShapeIndex, blendValue);
+                if (starMesh != null)
+                    starMesh.SetBlendShapeWeight(blendShapeIndex, Mathf.Lerp(100f, 0f, t));
             }
         }
+
+        // Raycast 방식은 매 프레임 호출하므로 false로 리셋
         isHit = false;
     }
 
+    // 외부(Ray)에서 호출하는 함수
     public void OnHit()
     {
         isHit = true;
@@ -118,40 +121,21 @@ public class EndStarController : MonoBehaviour
     void StageClear()
     {
         isCleared = true;
-        Debug.Log("Stage Clear!");
+        Debug.Log($"Stage {stageIndex + 1} Cleared!");
 
-        // ★ [핵심 추가] 트랜스포머에게 "클리어됐다"고 알림 (회전 재실행 방지)
-        if (resistanceTransformer != null)
-        {
-            resistanceTransformer.isStageCleared = true;
-        }
-
-        // 1. 자동 회전 끄기 (이제 트랜스포머가 다시 켜지 않음)
+        // 1. 별의 물리 기능 비활성화 (손에서 놓기, 회전 멈춤, 햅틱 끄기)
+        if (resistanceTransformer != null) resistanceTransformer.isStageCleared = true;
+        if (grabbableComponent != null) grabbableComponent.enabled = false;
         if (autoRotateScript != null) autoRotateScript.enabled = false;
 
-        // ★ [순서 중요] 잡기를 해제하면 EndTransform이 호출됨
-        // 위에서 isStageCleared를 true로 했으므로, 이제 안전하게 잡기를 풀 수 있음
-        if (grabbableComponent != null)
+        // 2. ★ 매니저에게 엔딩 연출 위임
+        if (StageEventManager.Instance != null)
         {
-            grabbableComponent.enabled = false;
+            StageEventManager.Instance.PlayEnding(stageIndex);
         }
-
-        // 2. 파티클 효과
-        if (clearParticle != null)
+        else
         {
-            if (defaultParticle != null) defaultParticle.SetActive(false);
-            if (ShineParticle != null) ShineParticle.SetActive(true);
-            clearParticle.SetActive(true);
-            ClearEffect.SetActive(true);
-        }
-
-        // 3. 맵 불빛 켜기
-        if (targetMapLight != null) targetMapLight.SetActive(true);
-
-        // 4. 시네마틱 재생 (이동)
-        if (cinematicScript != null)
-        {
-            cinematicScript.PlaySequence();
+            Debug.LogError("씬에 StageEventManager가 없습니다! 빈 오브젝트를 만들고 스크립트를 추가해주세요.");
         }
     }
 }
