@@ -6,7 +6,6 @@ using System.Collections.Generic;
 
 public class StageEventManager : MonoBehaviour
 {
-    // ★ [수정] struct -> class로 변경 (초기값 문제 해결)
     [System.Serializable]
     public class StageEndingData
     {
@@ -14,16 +13,22 @@ public class StageEventManager : MonoBehaviour
         public string stageName;
 
         [Header("UI 시퀀스 연출")]
-        public RawImage firstImage;      // 첫 번째 이미지
-        public RawImage secondImage;     // 두 번째 이미지
-        public TextMeshProUGUI clearText; // 클리어 텍스트
+        [Tooltip("엔딩 UI들이 모여있는 부모 캔버스")]
+        public GameObject endingCanvas;
+
+        [Tooltip("첫 번째로 뜰 이미지 (없으면 비워두세요)")]
+        public RawImage firstImage;
+        [Tooltip("두 번째로 뜰 이미지 (없으면 비워두세요)")]
+        public RawImage secondImage;
+
+        public TextMeshProUGUI clearText;
 
         [Tooltip("클리어 시 숨길 UI (예: 튜토리얼 창)")]
         public GameObject uiToHide;
 
         [Header("시간 설정")]
-        public float uiFadeDuration = 1f;   // 페이드 시간 (기본값 1초)
-        public float displayDuration = 2f;  // 유지 시간 (기본값 2초)
+        public float uiFadeDuration = 1f; // 나타나는 데 걸리는 시간
+        public float delayBetweenUI = 0.5f; // 다음 UI가 나올 때까지 대기 시간
 
         [Header("연출 오브젝트")]
         public GameObject targetMapLight;
@@ -64,23 +69,34 @@ public class StageEventManager : MonoBehaviour
         }
 
         StageEndingData data = stageList[stageIndex];
-
         StartCoroutine(ProcessEndingSequence(data));
     }
 
     IEnumerator ProcessEndingSequence(StageEndingData data)
     {
-        // 1. 기존 UI 숨기기
+        // 1. 숨길 UI 끄기
         if (data.uiToHide != null) data.uiToHide.SetActive(false);
 
-        // 2. 오브젝트/파티클 연출 실행
+        // 2. 엔딩 캔버스 켜기 & 초기화 (깜빡임 방지)
+        if (data.endingCanvas != null)
+        {
+            // 먼저 캔버스를 켜기 전에 내용물들을 투명하게 만듭니다.
+            if (data.firstImage != null) { data.firstImage.gameObject.SetActive(false); data.firstImage.canvasRenderer.SetAlpha(0f); }
+            if (data.secondImage != null) { data.secondImage.gameObject.SetActive(false); data.secondImage.canvasRenderer.SetAlpha(0f); }
+            if (data.clearText != null) { data.clearText.gameObject.SetActive(false); data.clearText.alpha = 0f; }
+
+            // 그 다음 캔버스를 켭니다.
+            data.endingCanvas.SetActive(true);
+        }
+
+        // 3. 오브젝트/파티클 연출 실행
         if (data.defaultParticle != null) data.defaultParticle.SetActive(false);
         if (data.shineParticle != null) data.shineParticle.SetActive(true);
         if (data.clearParticle != null) data.clearParticle.SetActive(true);
         if (data.clearEffect != null) data.clearEffect.SetActive(true);
         if (data.targetMapLight != null) data.targetMapLight.SetActive(true);
 
-        // 3. 시선 고정
+        // 4. 시선 고정
         if (playerRig != null && centerEyeAnchor != null && data.lookTarget != null)
         {
             Vector3 dir = data.lookTarget.position - centerEyeAnchor.position;
@@ -91,28 +107,29 @@ public class StageEventManager : MonoBehaviour
             playerRig.Rotate(Vector3.up, angle);
         }
 
-        // 4. 시네마틱 재생
+        // 5. 시네마틱 재생
         if (data.cinematicScript != null) data.cinematicScript.PlaySequence();
 
-        // 5. UI 시퀀스 시작
-        // (1) First Image
+        // 6. UI 시퀀스 시작 (나타나고 유지됨)
+
+        // (1) First Image Fade In
         if (data.firstImage != null)
         {
-            yield return StartCoroutine(FadeUI(data.firstImage, data.uiFadeDuration, data.displayDuration));
+            yield return StartCoroutine(FadeInUI(data.firstImage, data.uiFadeDuration));
+            yield return new WaitForSeconds(data.delayBetweenUI);
         }
 
-        // (2) Second Image
+        // (2) Second Image Fade In (First Image 위에 겹쳐서 뜸 or 옆에 뜸)
         if (data.secondImage != null)
         {
-            yield return StartCoroutine(FadeUI(data.secondImage, data.uiFadeDuration, data.displayDuration));
+            yield return StartCoroutine(FadeInUI(data.secondImage, data.uiFadeDuration));
+            yield return new WaitForSeconds(data.delayBetweenUI);
         }
 
-        // (3) Clear Text (마지막에 유지)
+        // (3) Clear Text Fade In
         if (data.clearText != null)
         {
             data.clearText.gameObject.SetActive(true);
-            data.clearText.alpha = 0;
-
             float timer = 0f;
             while (timer < data.uiFadeDuration)
             {
@@ -124,22 +141,12 @@ public class StageEventManager : MonoBehaviour
         }
     }
 
-    IEnumerator FadeUI(Graphic uiElement, float fadeDuration, float displayDuration)
+    // 사라지지 않고 나타나기만 하는 함수
+    IEnumerator FadeInUI(Graphic uiElement, float duration)
     {
         uiElement.gameObject.SetActive(true);
         uiElement.canvasRenderer.SetAlpha(0f);
-
-        // Fade In
-        uiElement.CrossFadeAlpha(1f, fadeDuration, false);
-        yield return new WaitForSeconds(fadeDuration);
-
-        // Display
-        yield return new WaitForSeconds(displayDuration);
-
-        // Fade Out
-        uiElement.CrossFadeAlpha(0f, fadeDuration, false);
-        yield return new WaitForSeconds(fadeDuration);
-
-        uiElement.gameObject.SetActive(false);
+        uiElement.CrossFadeAlpha(1f, duration, false); // 투명 -> 불투명
+        yield return new WaitForSeconds(duration);
     }
 }
