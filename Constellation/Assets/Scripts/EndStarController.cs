@@ -30,6 +30,8 @@ public class EndStarController : MonoBehaviour
     private bool isHit = false;    // 이번 프레임에 빛이 닿았는가?
     private bool isCleared = false; // 이미 클리어했는가?
 
+    public GameObject Portal;
+
     void Start()
     {
         // 1. BlendShape 초기화
@@ -122,7 +124,7 @@ public class EndStarController : MonoBehaviour
     {
         isCleared = true;
         Debug.Log($"Stage {stageIndex + 1} Cleared!");
-
+        Portal.SetActive(true);
         // 1. 별의 물리 기능 비활성화 (손에서 놓기, 회전 멈춤, 햅틱 끄기)
         if (resistanceTransformer != null) resistanceTransformer.isStageCleared = true;
         if (grabbableComponent != null) grabbableComponent.enabled = false;
