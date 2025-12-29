@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class LE : MonoBehaviour
 {
@@ -9,7 +9,7 @@ public class LE : MonoBehaviour
     [Header("References")]
     public LineRenderer lineRenderer;
     public Color hitColor = Color.green;
-    //public GameObject hitParticlePrefab; //  Ãß°¡ (Inspector¿¡ ¿¬°áÇÒ ÇÁ¸®ÆÕ)
+    //public GameObject hitParticlePrefab; //  ì¶”ê°€ (Inspectorì— ì—°ê²°í•  í”„ë¦¬íŒ¹)
     //public GameObject ClearParticle;
 
     private MeshRenderer targetRenderer;
@@ -17,8 +17,8 @@ public class LE : MonoBehaviour
     private Color originalColor;
     private GameObject activeParticle;
 
-    public bool isReflectable = true; // ÀÌ ºûÁÙ±â°¡ ¹İ»ç Å¥ºê¿¡ ÀÇÇØ ¹İ»çµÉ ¼ö ÀÖ´ÂÁö
-    public bool isPrismOutput = false; // ÀÌ ºûÁÙ±â°¡ ÇÁ¸®Áò¿¡¼­ ³ª¿Ô´ÂÁö (¿É¼Ç)
+    public bool isReflectable = true; // ì´ ë¹›ì¤„ê¸°ê°€ ë°˜ì‚¬ íë¸Œì— ì˜í•´ ë°˜ì‚¬ë  ìˆ˜ ìˆëŠ”ì§€
+    public bool isPrismOutput = false; // ì´ ë¹›ì¤„ê¸°ê°€ í”„ë¦¬ì¦˜ì—ì„œ ë‚˜ì™”ëŠ”ì§€ (ì˜µì…˜)
 
     void Awake()
     {
@@ -40,8 +40,8 @@ public class LE : MonoBehaviour
 
         bool hitTarget = false;
 
-        // C# 8.0 ÀÌ»óÀ» »ç¿ëÇÑ´Ù°í °¡Á¤ÇÏ°í 'out var' ´ë½Å 'out RaycastHit'À» À¯ÁöÇÕ´Ï´Ù.
-        // (»ç¿ëÀÚ ÄÚµå¸¦ ÃÖ´ëÇÑ Á¸Áß)
+        // C# 8.0 ì´ìƒì„ ì‚¬ìš©í•œë‹¤ê³  ê°€ì •í•˜ê³  'out var' ëŒ€ì‹  'out RaycastHit'ì„ ìœ ì§€í•©ë‹ˆë‹¤.
+        // (ì‚¬ìš©ì ì½”ë“œë¥¼ ìµœëŒ€í•œ ì¡´ì¤‘)
 
         for (int i = 0; i < maxReflections; i++)
         {
@@ -57,7 +57,7 @@ public class LE : MonoBehaviour
                     {
                         reflector.Activate();    
                     }
-                    if (isReflectable /*&& !isPrismOutput*/) // isPrismOutputÀ» Ã¼Å©ÇÏ¸é ÇÁ¸®Áò Ãâ·ÂÀÌ ¹İ»ç ¾È µÊ
+                    if (isReflectable /*&& !isPrismOutput*/) // isPrismOutputì„ ì²´í¬í•˜ë©´ í”„ë¦¬ì¦˜ ì¶œë ¥ì´ ë°˜ì‚¬ ì•ˆ ë¨
                     {
                         dir = Vector3.Reflect(dir, hit.normal);
                         pos = hit.point;
@@ -65,14 +65,14 @@ public class LE : MonoBehaviour
                     }
                     else
                     {
-                        // ¹İ»ç ºÒ°¡´ÉÇÑ ºûÀÌ¸é ¿©±â¼­ ¸ØÃã
+                        // ë°˜ì‚¬ ë¶ˆê°€ëŠ¥í•œ ë¹›ì´ë©´ ì—¬ê¸°ì„œ ë©ˆì¶¤
                         break;
                     }
                 }
                 else if (hit.collider.CompareTag("Target"))
                 {
                     ApplyHitColor(hit.collider.gameObject);
-                    /*hitParticlePrefab.SetActive(true);// ÆÄÆ¼Å¬ »ı¼º
+                    /*hitParticlePrefab.SetActive(true);// íŒŒí‹°í´ ìƒì„±
                     ClearParticle.SetActive(true);
                     hitTarget = true;
                     break;*/
@@ -83,42 +83,42 @@ public class LE : MonoBehaviour
                     hitTarget = true;
                     break;
                 }
-                // --- ¡å ÇÁ¸®Áò ·ÎÁ÷ Ãß°¡ ¡å ---
+                // --- â–¼ í”„ë¦¬ì¦˜ ë¡œì§ ì¶”ê°€ â–¼ ---
                 else if (hit.collider.CompareTag("Prism"))
                 {
 
-                    // ÇÁ¸®Áò¿¡ ´êÀ¸¸é, ÇØ´ç ÇÁ¸®ÁòÀ» È°¼ºÈ­½ÃÅ°°í ÇöÀç ·¹ÀÌ´Â ¿©±â¼­ ¸ØÃã
+                    // í”„ë¦¬ì¦˜ì— ë‹¿ìœ¼ë©´, í•´ë‹¹ í”„ë¦¬ì¦˜ì„ í™œì„±í™”ì‹œí‚¤ê³  í˜„ì¬ ë ˆì´ëŠ” ì—¬ê¸°ì„œ ë©ˆì¶¤
                     PrismCube prism = hit.collider.GetComponent<PrismCube>();
                     
                     if (prism != null)
                     {
-                        // ÇÁ¸®Áò¿¡°Ô ºûÀÌ ´ê¾Ò´Ù°í ¾Ë¸²
+                        // í”„ë¦¬ì¦˜ì—ê²Œ ë¹›ì´ ë‹¿ì•˜ë‹¤ê³  ì•Œë¦¼
                         prism.Activate(hit);
                        
                        
                     }
                     
-                    // ÇöÀç LineRenderer´Â ¿©±â¼­ Á¾·á
+                    // í˜„ì¬ LineRendererëŠ” ì—¬ê¸°ì„œ ì¢…ë£Œ
                     break;
                 }
-                // --- ¡ã ÇÁ¸®Áò ·ÎÁ÷ Ãß°¡ ¡ã ---
+                // --- â–² í”„ë¦¬ì¦˜ ë¡œì§ ì¶”ê°€ â–² ---
                 else
                 {
-                    // 1. È¤½Ã ºÎµúÈù ¹°Ã¼¿¡ NormalStar ½ºÅ©¸³Æ®°¡ ÀÖ´ÂÁö È®ÀÎ
+                    // 1. í˜¹ì‹œ ë¶€ë”ªíŒ ë¬¼ì²´ì— NormalStar ìŠ¤í¬ë¦½íŠ¸ê°€ ìˆëŠ”ì§€ í™•ì¸
                     NormalStar normalStar = hit.collider.GetComponent<NormalStar>();
 
                     if (normalStar != null)
                     {
-                        // 2. ÀÖ´Ù¸é OnHit() È£ÃâÇØ¼­ ÆÄÆ¼Å¬ ÄÑ±â
+                        // 2. ìˆë‹¤ë©´ OnHit() í˜¸ì¶œí•´ì„œ íŒŒí‹°í´ ì¼œê¸°
                         normalStar.OnHit();
 
-                        // 3. º°¿¡ ºûÀÌ ´ê¾ÒÀ¸´Ï ¿©±â¼­ ·¹ÀÌ ¸ØÃã (¶Õ°í Áö³ª°¡Áö ¾ÊÀ½)
-                        // ¸¸¾à ¶Õ°í Áö³ª°¡°Ô ÇÏ°í ½ÍÀ¸¸é ÀÌ break;¸¦ Áö¿ì°í
-                        // pos = hit.point + dir * 0.01f; ·Î ¾÷µ¥ÀÌÆ® ÇØÁÖ¸é µË´Ï´Ù.
+                        // 3. ë³„ì— ë¹›ì´ ë‹¿ì•˜ìœ¼ë‹ˆ ì—¬ê¸°ì„œ ë ˆì´ ë©ˆì¶¤ (ëš«ê³  ì§€ë‚˜ê°€ì§€ ì•ŠìŒ)
+                        // ë§Œì•½ ëš«ê³  ì§€ë‚˜ê°€ê²Œ í•˜ê³  ì‹¶ìœ¼ë©´ ì´ break;ë¥¼ ì§€ìš°ê³ 
+                        // pos = hit.point + dir * 0.01f; ë¡œ ì—…ë°ì´íŠ¸ í•´ì£¼ë©´ ë©ë‹ˆë‹¤.
                         break;
                     }
 
-                    // NormalStarµµ ¾Æ´Ï°í ´Ù¸¥ ÅÂ±×µµ ¾Æ´Ï¸é ±×³É º®ÀÌ¹Ç·Î ¸ØÃã
+                    // NormalStarë„ ì•„ë‹ˆê³  ë‹¤ë¥¸ íƒœê·¸ë„ ì•„ë‹ˆë©´ ê·¸ëƒ¥ ë²½ì´ë¯€ë¡œ ë©ˆì¶¤
                     break;
                 }
             }
@@ -133,7 +133,7 @@ public class LE : MonoBehaviour
 
         if (!hitTarget)
         {
-            // (±âÁ¸ ÆÄÆ¼Å¬ ¹× »ö»ó ÃÊ±âÈ­ ·ÎÁ÷)
+            // (ê¸°ì¡´ íŒŒí‹°í´ ë° ìƒ‰ìƒ ì´ˆê¸°í™” ë¡œì§)
            // hitParticlePrefab.SetActive(false);
           //  ClearParticle.SetActive(false);
             if (activeParticle != null)
@@ -147,7 +147,7 @@ public class LE : MonoBehaviour
         }
     }
 
-    // (ApplyHitColor ¹× SetColor ÇÔ¼ö´Â ±âÁ¸ ÄÚµå ±×´ë·Î »ç¿ë)
+    // (ApplyHitColor ë° SetColor í•¨ìˆ˜ëŠ” ê¸°ì¡´ ì½”ë“œ ê·¸ëŒ€ë¡œ ì‚¬ìš©)
     void ApplyHitColor(GameObject target)
     {
         MeshRenderer mr = target.GetComponent<MeshRenderer>();
@@ -156,9 +156,9 @@ public class LE : MonoBehaviour
         if (targetRenderer == null)
         {
             targetRenderer = mr;
-            // ÁÖÀÇ: sharedMaterial.GetColor´Â ¿¡µğÅÍ¿¡¼­¸¸ ¾ÈÀüÇÒ ¼ö ÀÖ½À´Ï´Ù.
-            // ·±Å¸ÀÓ¿¡¼­´Â mr.material.GetColor¸¦ »ç¿ëÇÏ°í Ä³½ÃÇÏ´Â °ÍÀÌ ÁÁ½À´Ï´Ù.
-            // ¿©±â¼­´Â ¿øº» ÄÚµå¸¦ À¯ÁöÇÕ´Ï´Ù.
+            // ì£¼ì˜: sharedMaterial.GetColorëŠ” ì—ë””í„°ì—ì„œë§Œ ì•ˆì „í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.
+            // ëŸ°íƒ€ì„ì—ì„œëŠ” mr.material.GetColorë¥¼ ì‚¬ìš©í•˜ê³  ìºì‹œí•˜ëŠ” ê²ƒì´ ì¢‹ìŠµë‹ˆë‹¤.
+            // ì—¬ê¸°ì„œëŠ” ì›ë³¸ ì½”ë“œë¥¼ ìœ ì§€í•©ë‹ˆë‹¤.
             originalColor = mr.sharedMaterial.GetColor("_BaseColor");
         }
 

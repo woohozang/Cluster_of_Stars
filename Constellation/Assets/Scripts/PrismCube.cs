@@ -1,28 +1,28 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections.Generic;
 
 public class PrismCube : MonoBehaviour
 {
-    // °¢ Ãâ·Â ºûÁÙ±â¿¡ ´ëÇÑ ¼³Á¤À» ´ã´Â Å¬·¡½º
+    // ê° ì¶œë ¥ ë¹›ì¤„ê¸°ì— ëŒ€í•œ ì„¤ì •ì„ ë‹´ëŠ” í´ë˜ìŠ¤
     [System.Serializable]
     public class OutputRayConfig
     {
-        [Tooltip("Ãâ·ÂµÉ ºûÁÙ±â ¿ÀºêÁ§Æ® (LE ½ºÅ©¸³Æ®°¡ ÀÖ¾î¾ß ÇÔ)")]
+        [Tooltip("ì¶œë ¥ë  ë¹›ì¤„ê¸° ì˜¤ë¸Œì íŠ¸ (LE ìŠ¤í¬ë¦½íŠ¸ê°€ ìˆì–´ì•¼ í•¨)")]
         public GameObject rayObject;
 
-        [Tooltip("ÀÌ ºûÁÙ±â°¡ ´Ù¸¥ °Å¿ï¿¡ ¹İ»çµÉ ¼ö ÀÖ´ÂÁö ¿©ºÎ")]
+        [Tooltip("ì´ ë¹›ì¤„ê¸°ê°€ ë‹¤ë¥¸ ê±°ìš¸ì— ë°˜ì‚¬ë  ìˆ˜ ìˆëŠ”ì§€ ì—¬ë¶€")]
         public bool canReflect = true;
 
-        [Tooltip("Å¥ºêÀÇ ·ÎÄÃ ZÃà(¾Õ)À» ±âÁØÀ¸·Î ¾ó¸¶³ª ¿·À¸·Î ¹ú¾îÁúÁö ¹æÇâ ¼³Á¤")]
+        [Tooltip("íë¸Œì˜ ë¡œì»¬ Zì¶•(ì•)ì„ ê¸°ì¤€ìœ¼ë¡œ ì–¼ë§ˆë‚˜ ì˜†ìœ¼ë¡œ ë²Œì–´ì§ˆì§€ ë°©í–¥ ì„¤ì •")]
         public Vector3 localSplitDirection = new Vector3(0.3f, 0, 1.0f);
     }
 
-    [Header("ºû ºĞ±â ¼³Á¤ (¸®½ºÆ®·Î °ü¸®)")]
+    [Header("ë¹› ë¶„ê¸° ì„¤ì • (ë¦¬ìŠ¤íŠ¸ë¡œ ê´€ë¦¬)")]
     public List<OutputRayConfig> outputRays = new List<OutputRayConfig>();
 
-    [Header("ÆÄÆ¼Å¬ ¹× ¸ÓÆ¼¸®¾ó")]
+    [Header("íŒŒí‹°í´ ë° ë¨¸í‹°ë¦¬ì–¼")]
     public GameObject P_Particle;
-    [Tooltip("ºûÀÌ ´ê¾ÒÀ» ¶§ º¯°æµÉ ºû³ª´Â ¸ÓÆ¼¸®¾ó")]
+    [Tooltip("ë¹›ì´ ë‹¿ì•˜ì„ ë•Œ ë³€ê²½ë  ë¹›ë‚˜ëŠ” ë¨¸í‹°ë¦¬ì–¼")]
     public Material activatedMaterial;
 
     private Material originalMaterial;
@@ -34,13 +34,13 @@ public class PrismCube : MonoBehaviour
         meshRenderer = GetComponent<MeshRenderer>();
         if (meshRenderer == null)
         {
-            Debug.LogError("MeshRenderer°¡ ÀÌ ¿ÀºêÁ§Æ®¿¡ ¾ø½À´Ï´Ù!", this);
+            Debug.LogError("MeshRendererê°€ ì´ ì˜¤ë¸Œì íŠ¸ì— ì—†ìŠµë‹ˆë‹¤!", this);
             return;
         }
 
         originalMaterial = meshRenderer.material;
 
-        // ½ÃÀÛÇÒ ¶§ ¸ğµç ºûÁÙ±â¸¦ ²¨µÓ´Ï´Ù.
+        // ì‹œì‘í•  ë•Œ ëª¨ë“  ë¹›ì¤„ê¸°ë¥¼ êº¼ë‘¡ë‹ˆë‹¤.
         foreach (var config in outputRays)
         {
             if (config.rayObject != null)
@@ -49,39 +49,39 @@ public class PrismCube : MonoBehaviour
     }
 
     /// <summary>
-    /// LE.cs ½ºÅ©¸³Æ®°¡ ÀÌ ÇÔ¼ö¸¦ È£ÃâÇÏ¿© ÇÁ¸®ÁòÀ» È°¼ºÈ­½ÃÅµ´Ï´Ù.
+    /// LE.cs ìŠ¤í¬ë¦½íŠ¸ê°€ ì´ í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ì—¬ í”„ë¦¬ì¦˜ì„ í™œì„±í™”ì‹œí‚µë‹ˆë‹¤.
     /// </summary>
     public void Activate(RaycastHit hit)
     {
         wasHitThisFrame = true;
 
-        // ¸ÓÆ¼¸®¾ó º¯°æ ¹× ÆÄÆ¼Å¬ È°¼ºÈ­
+        // ë¨¸í‹°ë¦¬ì–¼ ë³€ê²½ ë° íŒŒí‹°í´ í™œì„±í™”
         if (meshRenderer != null && meshRenderer.material != activatedMaterial)
         {
             meshRenderer.material = activatedMaterial;
         }
         if (P_Particle != null) P_Particle.SetActive(true);
 
-        // ¸®½ºÆ®¿¡ µî·ÏµÈ ¸ğµç ºûÁÙ±â È°¼ºÈ­ ¹× ¼³Á¤ Àû¿ë
+        // ë¦¬ìŠ¤íŠ¸ì— ë“±ë¡ëœ ëª¨ë“  ë¹›ì¤„ê¸° í™œì„±í™” ë° ì„¤ì • ì ìš©
         foreach (var config in outputRays)
         {
             if (config.rayObject == null) continue;
 
-            // 1. ºûÁÙ±â È°¼ºÈ­
+            // 1. ë¹›ì¤„ê¸° í™œì„±í™”
             config.rayObject.SetActive(true);
 
-            // 2. ½ÃÀÛ À§Ä¡ ¼³Á¤ (·¹ÀÌ°¡ ¸ÂÀº ÁöÁ¡)
+            // 2. ì‹œì‘ ìœ„ì¹˜ ì„¤ì • (ë ˆì´ê°€ ë§ì€ ì§€ì )
             config.rayObject.transform.position = hit.point;
 
-            // 3. ¹æÇâ ¼³Á¤ (·ÎÄÃ ¹æÇâ -> ¿ùµå ¹æÇâ)
+            // 3. ë°©í–¥ ì„¤ì • (ë¡œì»¬ ë°©í–¥ -> ì›”ë“œ ë°©í–¥)
             Vector3 worldDir = transform.TransformDirection(config.localSplitDirection.normalized);
             config.rayObject.transform.forward = worldDir;
 
-            // 4. LE ½ºÅ©¸³Æ® ¼³Á¤ (¹İ»ç °¡´É ¿©ºÎ Àû¿ë)
+            // 4. LE ìŠ¤í¬ë¦½íŠ¸ ì„¤ì • (ë°˜ì‚¬ ê°€ëŠ¥ ì—¬ë¶€ ì ìš©)
             LE leScript = config.rayObject.GetComponent<LE>();
             if (leScript != null)
             {
-                leScript.isReflectable = config.canReflect; // ¿©±â¼­ ¸®½ºÆ®ÀÇ ¼³Á¤À» Àû¿ë!
+                leScript.isReflectable = config.canReflect; // ì—¬ê¸°ì„œ ë¦¬ìŠ¤íŠ¸ì˜ ì„¤ì •ì„ ì ìš©!
                 leScript.isPrismOutput = true;
             }
         }
@@ -89,17 +89,17 @@ public class PrismCube : MonoBehaviour
 
     void LateUpdate()
     {
-        // ÀÌ¹ø ÇÁ·¹ÀÓ¿¡ Activate°¡ È£ÃâµÇÁö ¾Ê¾Ò´Ù¸é (ºûÀÌ ºø³ª°¬´Ù¸é)
+        // ì´ë²ˆ í”„ë ˆì„ì— Activateê°€ í˜¸ì¶œë˜ì§€ ì•Šì•˜ë‹¤ë©´ (ë¹›ì´ ë¹—ë‚˜ê°”ë‹¤ë©´)
         if (!wasHitThisFrame)
         {
-            // ¸ğµç ºûÁÙ±â ºñÈ°¼ºÈ­
+            // ëª¨ë“  ë¹›ì¤„ê¸° ë¹„í™œì„±í™”
             foreach (var config in outputRays)
             {
                 if (config.rayObject != null)
                     config.rayObject.SetActive(false);
             }
 
-            // ¸ÓÆ¼¸®¾ó ¿ø»ó º¹±¸
+            // ë¨¸í‹°ë¦¬ì–¼ ì›ìƒ ë³µêµ¬
             if (meshRenderer != null && meshRenderer.material != originalMaterial)
             {
                 meshRenderer.material = originalMaterial;
