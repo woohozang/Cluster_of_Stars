@@ -128,6 +128,12 @@ public class EndStarController : MonoBehaviour
         // 1. 별의 물리 기능 비활성화 (손에서 놓기, 회전 멈춤, 햅틱 끄기)
         if (resistanceTransformer != null) resistanceTransformer.isStageCleared = true;
         if (grabbableComponent != null) grabbableComponent.enabled = false;
+        Collider col = GetComponent<Collider>();
+        if(col != null)
+        {
+            col.enabled = false;
+            col.enabled = true;
+        }
         if (autoRotateScript != null) autoRotateScript.enabled = false;
 
         // 2. ★ 매니저에게 엔딩 연출 위임

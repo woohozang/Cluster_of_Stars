@@ -25,9 +25,15 @@ public class PrismCube : MonoBehaviour
     [Tooltip("빛이 닿았을 때 변경될 빛나는 머티리얼")]
     public Material activatedMaterial;
 
+    [Header("깜빡임 방지 설정")]
+    [Tooltip("신호가 끊겨도 이 시간(초) 동안은 켜진 상태를 유지합니다.")]
+    public float keepAliveTime = 0.1f;
+
     private Material originalMaterial;
     private MeshRenderer meshRenderer;
-    private bool wasHitThisFrame = false;
+
+    // 마지막으로 Activate가 호출된 시간 기록
+    private float lastHitTime = -1f;
 
     void Awake()
     {
@@ -41,11 +47,7 @@ public class PrismCube : MonoBehaviour
         originalMaterial = meshRenderer.material;
 
         // 시작할 때 모든 빛줄기를 꺼둡니다.
-        foreach (var config in outputRays)
-        {
-            if (config.rayObject != null)
-                config.rayObject.SetActive(false);
-        }
+        DisableAllEffects();
     }
 
     /// <summary>
@@ -53,60 +55,84 @@ public class PrismCube : MonoBehaviour
     /// </summary>
     public void Activate(RaycastHit hit)
     {
-        wasHitThisFrame = true;
+        // [핵심] 마지막으로 맞은 시간을 현재 시간으로 갱신
+        lastHitTime = Time.time;
 
-        // 머티리얼 변경 및 파티클 활성화
-        if (meshRenderer != null && meshRenderer.material != activatedMaterial)
+        // 켜져야 하는 상태라면 활성화 로직 실행
+        // (매 프레임 호출되므로, 불필요한 연산을 줄이기 위해 상태 체크를 할 수도 있지만, 
+        //  위치 업데이트가 필요하므로 계속 실행합니다.)
+        EnableEffects(hit);
+    }
+
+    void LateUpdate()
+    {
+        // [핵심 로직 변경]
+        // "이번 프레임에 안 맞았으면 끈다" -> "마지막으로 맞은 지 일정 시간이 지났으면 끈다"
+
+        bool isAlive = (Time.time - lastHitTime) <= keepAliveTime;
+
+        if (!isAlive)
+        {
+            DisableAllEffects();
+        }
+    }
+
+    // 효과 켜기 (Activate 내부 로직 분리)
+    void EnableEffects(RaycastHit hit)
+    {
+        // 1. 머티리얼 변경
+        if (meshRenderer != null && meshRenderer.sharedMaterial != activatedMaterial)
         {
             meshRenderer.material = activatedMaterial;
         }
-        if (P_Particle != null) P_Particle.SetActive(true);
 
-        // 리스트에 등록된 모든 빛줄기 활성화 및 설정 적용
+        // 2. 파티클 켜기
+        if (P_Particle != null && !P_Particle.activeSelf)
+            P_Particle.SetActive(true);
+
+        // 3. 빛줄기 업데이트
         foreach (var config in outputRays)
         {
             if (config.rayObject == null) continue;
 
-            // 1. 빛줄기 활성화
-            config.rayObject.SetActive(true);
+            if (!config.rayObject.activeSelf)
+                config.rayObject.SetActive(true);
 
-            // 2. 시작 위치 설정 (레이가 맞은 지점)
-            config.rayObject.transform.position = hit.point;
+            // 시작 위치 설정 (레이가 맞은 지점)
+            //config.rayObject.transform.position = hit.point;
 
-            // 3. 방향 설정 (로컬 방향 -> 월드 방향)
+            // 방향 설정 (로컬 방향 -> 월드 방향)
             Vector3 worldDir = transform.TransformDirection(config.localSplitDirection.normalized);
             config.rayObject.transform.forward = worldDir;
 
-            // 4. LE 스크립트 설정 (반사 가능 여부 적용)
+            // LE 스크립트 설정
             LE leScript = config.rayObject.GetComponent<LE>();
             if (leScript != null)
             {
-                leScript.isReflectable = config.canReflect; // 여기서 리스트의 설정을 적용!
+                leScript.isReflectable = config.canReflect;
                 leScript.isPrismOutput = true;
             }
         }
     }
 
-    void LateUpdate()
+    // 효과 끄기 (LateUpdate 내부 로직 분리)
+    void DisableAllEffects()
     {
-        // 이번 프레임에 Activate가 호출되지 않았다면 (빛이 빗나갔다면)
-        if (!wasHitThisFrame)
+        // 1. 빛줄기 끄기
+        foreach (var config in outputRays)
         {
-            // 모든 빛줄기 비활성화
-            foreach (var config in outputRays)
-            {
-                if (config.rayObject != null)
-                    config.rayObject.SetActive(false);
-            }
-
-            // 머티리얼 원상 복구
-            if (meshRenderer != null && meshRenderer.material != originalMaterial)
-            {
-                meshRenderer.material = originalMaterial;
-            }
-            if (P_Particle != null) P_Particle.SetActive(false);
+            if (config.rayObject != null && config.rayObject.activeSelf)
+                config.rayObject.SetActive(false);
         }
 
-        wasHitThisFrame = false;
+        // 2. 머티리얼 원상 복구
+        if (meshRenderer != null && meshRenderer.sharedMaterial != originalMaterial)
+        {
+            meshRenderer.material = originalMaterial;
+        }
+
+        // 3. 파티클 끄기
+        if (P_Particle != null && P_Particle.activeSelf)
+            P_Particle.SetActive(false);
     }
 }
