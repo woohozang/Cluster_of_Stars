@@ -134363,7 +134363,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adc5f2b72b813bf48a84b364e9f695ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneName: SampleScene
+  sceneName: GameSceneV2
   fadeDuration: 1
 --- !u!136 &505383171
 CapsuleCollider:
