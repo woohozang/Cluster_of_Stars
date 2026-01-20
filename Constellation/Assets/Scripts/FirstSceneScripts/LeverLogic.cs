@@ -45,7 +45,7 @@ public class LeverLogic : MonoBehaviour
         if (audio != null) audio.Play();*/
         yield return new WaitForSeconds(fadeDuration);
 
-        SceneManager.LoadScene(StartScene);
+        SceneManager.LoadScene(tutorialSceneName);
     }
            
 
