@@ -1,11 +1,15 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class LeverLogic : MonoBehaviour
 {
     [Header("Settings")]
     public string tutorialSceneName = "StartScene";
     public float targetAngle = -59f; // 작동할 각도 (여유있게 설정)
+
+    [Header("Transition Settings")]
+    public float fadeDuration = 2.0f; // 페이드 아웃 걸리는 시간 (2초 추천)
 
     private bool isTriggered = false;
 
@@ -20,19 +24,30 @@ public class LeverLogic : MonoBehaviour
         // 2. 각도가 목표치(-55도)보다 더 작아지면 (더 당겨지면) 실행
         if (!isTriggered && currentX <= targetAngle)
         {
-            GoToTutorial();
+            StartCoroutine(TransitionSequence());
+            //GoToTutorial();
         }
     }
-
-    void GoToTutorial()
+    IEnumerator TransitionSequence()
     {
         isTriggered = true;
-        Debug.Log("🚀 레버 작동! 튜토리얼로 이동!");
+        OVRScreenFade fader = FindObjectOfType<OVRScreenFade>();
 
-        // 효과음 재생 등이 있다면 여기서
+        if (fader != null)
+        {
+            fader.FadeOut();
+        }
+        else
+        {
+            fadeDuration = 0.5f;
+        }
+        /*AudioSource audio = GetComponent<AudioSource>();
+        if (audio != null) audio.Play();*/
+        yield return new WaitForSeconds(fadeDuration);
 
-        SceneManager.LoadScene(tutorialSceneName);
+        SceneManager.LoadScene(StartScene);
     }
+           
 
     // 유니티 내부 각도(0~360)를 보기 편한 -180~180으로 변환
     float GetInspectorAngle(float angle)
