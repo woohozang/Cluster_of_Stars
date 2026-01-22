@@ -17,6 +17,7 @@ public class LeverHaptics : MonoBehaviour
     public AudioSource audioSource;
     public AudioClip ratchetSound; // '틱' 소리 (기계음)
     public AudioClip completeSound; // '쿵' 완료 소리
+    public AudioClip launchSound;
 
     [Header("Events")]
     public UnityEvent onLeverComplete; // 완료 시 실행할 이벤트 (씬 이동 등)
@@ -91,6 +92,11 @@ public class LeverHaptics : MonoBehaviour
         {
             audioSource.pitch = 1.0f;
             audioSource.PlayOneShot(completeSound);
+        }
+        if (audioSource && launchSound)
+        {
+            // PlayOneShot은 소리가 겹쳐도 되므로 BGM처럼 깔립니다.
+            audioSource.PlayOneShot(launchSound);
         }
 
         // 완료 햅틱 (길고 묵직하게)
