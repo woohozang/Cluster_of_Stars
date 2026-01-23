@@ -8,6 +8,12 @@ public class ScenePortal : MonoBehaviour
     [Tooltip("이동할 씬의 정확한 이름 (예: GameScene)")]
     public string sceneName;
 
+    [Header("오디오 설정")] // [추가됨]
+    [Tooltip("소리를 재생할 스피커 (Audio Source)")]
+    public AudioSource audioSource;
+    [Tooltip("포탈 탈 때 날 소리 파일")]
+    public AudioClip teleportSound;
+
     [Tooltip("화면이 어두워지는 속도")]
     public float fadeDuration = 1.0f;
 
@@ -18,6 +24,10 @@ public class ScenePortal : MonoBehaviour
         // 이미 이동 중이 아니고, 플레이어라면 실행
         if (!isTeleporting && other.CompareTag("Player"))
         {
+            if (audioSource != null && teleportSound != null)
+            {
+                audioSource.PlayOneShot(teleportSound);
+            }
             // OVRCameraRig(플레이어 최상위 부모)를 찾습니다.
             Transform playerRig = other.transform.root;
 
