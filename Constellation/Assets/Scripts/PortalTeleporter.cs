@@ -13,6 +13,12 @@ public class PortalTeleporter : MonoBehaviour
     [Tooltip("이동 후 다음 이동까지 대기 시간 (초 단위)")]
     public float cooldownTime = 2.0f; // 2초 동안 텔레포트 금지
 
+    [Header("오디오 설정")] // [추가됨]
+    [Tooltip("소리를 재생할 스피커 (Audio Source)")]
+    public AudioSource audioSource;
+    [Tooltip("포탈 탈 때 날 소리 파일")]
+    public AudioClip teleportSound;
+
     // static으로 선언하여 모든 포털이 이 변수를 공유합니다.
     // 즉, 어떤 포털이든 타고 이동 중이면 다른 포털도 작동하지 않습니다.
     private static bool isGlobalTeleporting = false;
@@ -24,6 +30,10 @@ public class PortalTeleporter : MonoBehaviour
 
         if (other.CompareTag("Player"))
         {
+            if (audioSource != null && teleportSound != null)
+            {
+                audioSource.PlayOneShot(teleportSound);
+            }
             Transform playerRig = other.transform.root;
             StartCoroutine(TeleportSequence(playerRig));
         }
