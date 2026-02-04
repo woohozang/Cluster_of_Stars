@@ -17,7 +17,7 @@
 
 ## 📷 Preview & Gameplay
 
-| 🚀 콕핏 조작 (Interaction) | 🧩 빛 반사 퍼즐 (Puzzle) | 👐양손 조작 |
+| 🚀 우주선 출발 (Interaction) | 🧩 빛 반사 퍼즐 (Puzzle) | 👐양손 조작 |
 | :---: | :---: | :---: |
 |<img width="362" height="277" alt="image" src="https://github.com/user-attachments/assets/288d2491-2b25-4557-82b9-a4fb2e0c9280" />|<img width="352" height="239" alt="image" src="https://github.com/user-attachments/assets/41902ed4-4933-4e05-858d-ffd176974452" />|<img width="488" height="292" alt="image" src="https://github.com/user-attachments/assets/ab611f11-209e-43df-89b0-aaf697116fc5" />|
 | **직관적인 레버 조작** | **거울을 이용한 빛 경로 설계** | **회전 인터랙션**|
