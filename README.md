@@ -10,7 +10,7 @@
 <br/>
 
 ## 🏆 Award & Recognition
-**202X HCI Korea Creative Award (CA) 우수상 수상**
+**2026 HCI Korea Creative Award (CA) 우수상 수상**
 > "가상 현실에서의 몰입감 넘치는 상호작용 설계와 독창적인 퍼즐 메카닉스"
 
 
