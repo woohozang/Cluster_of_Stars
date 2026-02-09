@@ -1,26 +1,31 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using TMPro;
 
 public class FinalEndingEvent : MonoBehaviour
 {
-    [Header("1. º°ÀÚ¸® ¿ÀºêÁ§Æ® (Ç¥½ÃÇÒ 4°³)")]
-    // ¿£µù ¶§ EndTrigger ÁÖº¯¿¡ ¶ç¿ï º°ÀÚ¸® ÀÌ¹ÌÁöµé (¹Ì¸® ¹èÄ¡ÇÏ°í ²¨µÎ¼¼¿ä)
-    public GameObject[] constellationObjs;
+    [Header("0. OVR í™”ë©´ í˜ì´ë“œ ì„¤ì •")]
+    // [ë³€ê²½] Image ëŒ€ì‹  OVRScreenFadeë¥¼ ì‚¬ìš©í•©ë‹ˆë‹¤.
+    public OVRScreenFade screenFade;
 
-    [Header("2. Áß¾Ó 3D º°")]
-    public Transform targetStar;          // ºûÀÌ µµÂøÇÒ ReflectStar_1
-    public SkinnedMeshRenderer starMesh;  // ½¦ÀÌÇÁÅ° Á¶Àı¿ë (¾øÀ¸¸é ºñ¿öµÎ¼¼¿ä)
+    [Header("1. ë³„ìë¦¬ ì´ë¯¸ì§€ & ë¶€ëª¨ ìº”ë²„ìŠ¤")]
+    public CanvasGroup starCanvasGroup;
+    public Image[] constellationImages;
 
-    [Header("3. ¿£µù UI")]
-    public GameObject finalCanvas;        // "The End" Äµ¹ö½º
-    public Image whiteFadePanel;          // È­ÀÌÆ®¾Æ¿ô¿ë ÆĞ³Î
+    [Header("2. ì¤‘ì•™ 3D ë³„")]
+    public Transform targetStar;
+    public SkinnedMeshRenderer starMesh;
 
-    [Header("4. ÀÌÆåÆ® ¼³Á¤")]
-    public GameObject lightProjectilePrefab; // ³¯¾Æ°¥ ºû ÇÁ¸®ÆÕ
-    public float lightSpeed = 8.0f;          // ºû ¼Óµµ
+    [Header("3. ì—”ë”© UI")]
+    public TextMeshProUGUI endText;
+    public Image endImage;
 
-    [Header("¿Àµğ¿À")]
+    [Header("4. ì´í™íŠ¸ ì„¤ì •")]
+    public GameObject lightProjectilePrefab;
+    public float lightSpeed = 8.0f;
+
+    [Header("ì˜¤ë””ì˜¤")]
     public AudioSource audioSource;
     public AudioClip appearSound;
     public AudioClip shootSound;
@@ -29,123 +34,186 @@ public class FinalEndingEvent : MonoBehaviour
 
     private bool isEndingStarted = false;
 
-    // ÇÃ·¹ÀÌ¾î°¡ EndTrigger¿¡ ´êÀ¸¸é ½ÃÀÛ
+    private void Start()
+    {
+        // 1. ì‹œì‘í•  ë•Œ í™”ë©´ì´ íˆ¬ëª…í•´ì§€ë„ë¡ (í˜¹ì‹œ ëª°ë¼ ì´ˆê¸°í™”)
+        if (screenFade != null) screenFade.FadeIn();
+
+        // 2. ë¶€ëª¨ ìº”ë²„ìŠ¤ ì¼œê¸°
+        if (starCanvasGroup != null)
+        {
+            starCanvasGroup.alpha = 1f;
+            starCanvasGroup.gameObject.SetActive(true);
+        }
+
+        // 3. ë³„ìë¦¬ ì´ë¯¸ì§€ íˆ¬ëª… ì´ˆê¸°í™”
+        foreach (var img in constellationImages)
+        {
+            if (img != null)
+            {
+                SetImageAlpha(img, 0f);
+                img.gameObject.SetActive(true);
+            }
+        }
+
+        // 4. ì—”ë”© í…ìŠ¤íŠ¸ ì´ˆê¸°í™”
+        if (endText != null)
+        {
+            SetTextAlpha(endText, 0f);
+            endText.gameObject.SetActive(true);
+        }
+        if (endImage != null)
+        {
+            SetImageAlpha(endImage, 0f);
+            endImage.gameObject.SetActive(true);
+        }
+
+        if (starMesh) starMesh.SetBlendShapeWeight(0, 100f);
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        if (isEndingStarted) return; // ÀÌ¹Ì ½ÃÀÛÇßÀ¸¸é Áßº¹ ½ÇÇà ¹æÁö
+        if (isEndingStarted) return;
 
-        // ÇÃ·¹ÀÌ¾î ÅÂ±× È®ÀÎ (ÇÊ¿ä½Ã "Player" µîÀ¸·Î ¼öÁ¤)
         if (other.CompareTag("Player") || other.name.Contains("Player") || other.name.Contains("Camera"))
         {
             isEndingStarted = true;
+            Debug.Log("ğŸš€ ì—”ë”© ì‹œí€€ìŠ¤ ì‹œì‘!");
             StartCoroutine(ProcessEndingSequence());
         }
     }
 
     IEnumerator ProcessEndingSequence()
     {
-        // 0. ½¦ÀÌÇÁÅ° ÃÊ±âÈ­
-        if (starMesh) starMesh.SetBlendShapeWeight(0, 0);
-
-        // 1. 4°³ÀÇ º°ÀÚ¸® ¼øÂ÷ ½ÇÇà
-        for (int i = 0; i < constellationObjs.Length; i++)
+        // === [1ë‹¨ê³„] ë³„ìë¦¬ ì´ë¯¸ì§€ ìˆœì°¨ í˜ì´ë“œ ì¸ ===
+        for (int i = 0; i < constellationImages.Length; i++)
         {
-            // (1) º°ÀÚ¸® ¿ÀºêÁ§Æ® ÄÑ±â (³ªÅ¸³²)
-            if (constellationObjs[i] != null)
+            if (constellationImages[i] != null)
             {
-                constellationObjs[i].SetActive(true);
                 if (audioSource && appearSound) audioSource.PlayOneShot(appearSound);
+                yield return StartCoroutine(FadeImage(constellationImages[i], 0f, 1f, 1.0f));
             }
+            yield return new WaitForSeconds(0.2f);
 
-            yield return new WaitForSeconds(0.5f); // Àá½Ã ´ë±â
-
-            // (2) ºû ¹ß»ç (º°ÀÚ¸® À§Ä¡ -> Áß¾Ó º°)
-            if (constellationObjs[i] != null)
+            if (constellationImages[i] != null)
             {
-                yield return StartCoroutine(ShootLight(constellationObjs[i].transform.position));
+                yield return StartCoroutine(ShootLight(constellationImages[i].transform.position));
             }
 
-            // (3) 3D º° ½¦ÀÌÇÁÅ° Ã¤¿ì±â (25%¾¿)
-            float targetWeight = (i + 1) * 25.0f;
-            yield return StartCoroutine(FillStarShapeKey(targetWeight));
+            float targetWeight = 100f - ((i + 1) * 25.0f);
+            yield return StartCoroutine(ChangeShapeKey(targetWeight));
 
             if (audioSource && hitSound) audioSource.PlayOneShot(hitSound);
 
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.3f);
         }
 
-        // 2. ÇÇ³¯·¹ ´ë±â
+        // === [2ë‹¨ê³„] í”¼ë‚ ë ˆ í™”ì´íŠ¸ ì•„ì›ƒ (OVRScreenFade ì‚¬ìš©) ===
         yield return new WaitForSeconds(1.0f);
-
-        // 3. È­ÀÌÆ® ¾Æ¿ô (´«ºÎ½É)
         if (audioSource && explosionSound) audioSource.PlayOneShot(explosionSound);
-        yield return StartCoroutine(FadeScreen(0, 1, 2.0f)); // Åõ¸í -> ÇÏ¾ç
 
-        // 4. ¿ÀºêÁ§Æ® Á¤¸® (º°ÀÚ¸®, 3Dº° ¼û±â±â)
+        // â˜… FadeOut()ì´ í™”ë©´ì„ "ìƒ‰ê¹”ë¡œ ì±„ìš°ëŠ”" í•¨ìˆ˜ì…ë‹ˆë‹¤. (íˆ¬ëª… -> í°ìƒ‰)
+        if (screenFade != null) screenFade.FadeOut();
+        yield return new WaitForSeconds(2.0f); // ì™„ì „íˆ í•˜ì–˜ì§ˆ ë•Œê¹Œì§€ ëŒ€ê¸°
+
+        // === [3ë‹¨ê³„] êµì²´ ì‘ì—… (í•˜ì–€ í™”ë©´ ë’¤ì—ì„œ) ===
         if (targetStar) targetStar.gameObject.SetActive(false);
-        foreach (var obj in constellationObjs) if (obj) obj.SetActive(false);
 
-        // 5. ¿£µù Å©·¹µ÷ ÄÑ±â
-        if (finalCanvas) finalCanvas.SetActive(true);
+        foreach (var img in constellationImages)
+        {
+            if (img != null)
+            {
+                SetImageAlpha(img, 0f);
+                img.gameObject.SetActive(false);
+            }
+        }
 
-        // 6. È­ÀÌÆ® ÀÎ (ÇÏ¾á»ö °ÈÈ÷±â)
-        yield return StartCoroutine(FadeScreen(1, 0, 2.0f)); // ÇÏ¾ç -> Åõ¸í
+        // === [4ë‹¨ê³„] í™”ì´íŠ¸ ì¸ (í™”ë©´ ë°ì•„ì§) ===
+        // â˜… FadeIn()ì´ í™”ë©´ì„ "íˆ¬ëª…í•˜ê²Œ ë§Œë“œëŠ”" í•¨ìˆ˜ì…ë‹ˆë‹¤. (í°ìƒ‰ -> íˆ¬ëª…)
+        if (screenFade != null) screenFade.FadeIn();
+        yield return new WaitForSeconds(2.0f); // ë°ì•„ì§€ëŠ” ì‹œê°„ ëŒ€ê¸°
+
+        // === [5ë‹¨ê³„] ì—”ë”© í…ìŠ¤íŠ¸ ë“±ì¥ ===
+        StartCoroutine(FadeText(endText, 0f, 1f, 2.0f));
+        if (endImage != null) StartCoroutine(FadeImage(endImage, 0f, 1f, 2.0f));
+
+        yield return new WaitForSeconds(2.0f);
     }
 
-    // ºû ³¯¸®±â
+    // --- Helper í•¨ìˆ˜ë“¤ì€ ê¸°ì¡´ê³¼ ë™ì¼ ---
+    IEnumerator FadeImage(Image target, float start, float end, float duration)
+    {
+        if (target == null) yield break;
+        target.gameObject.SetActive(true);
+        float timer = 0f;
+        Color c = target.color;
+        c.a = start;
+        target.color = c;
+        while (timer < 1f)
+        {
+            timer += Time.deltaTime / duration;
+            c.a = Mathf.Lerp(start, end, timer);
+            target.color = c;
+            yield return null;
+        }
+        c.a = end;
+        target.color = c;
+    }
+
+    IEnumerator FadeText(TextMeshProUGUI target, float start, float end, float duration)
+    {
+        if (target == null) yield break;
+        target.gameObject.SetActive(true);
+        float timer = 0f;
+        Color c = target.color;
+        c.a = start;
+        target.color = c;
+        while (timer < 1f)
+        {
+            timer += Time.deltaTime / duration;
+            c.a = Mathf.Lerp(start, end, timer);
+            target.color = c;
+            yield return null;
+        }
+        c.a = end;
+        target.color = c;
+    }
+
+    void SetImageAlpha(Image target, float alpha)
+    {
+        if (target == null) return;
+        Color c = target.color;
+        c.a = alpha;
+        target.color = c;
+    }
+
+    void SetTextAlpha(TextMeshProUGUI target, float alpha)
+    {
+        if (target == null) return;
+        Color c = target.color;
+        c.a = alpha;
+        target.color = c;
+    }
+
     IEnumerator ShootLight(Vector3 startPos)
     {
         if (audioSource && shootSound) audioSource.PlayOneShot(shootSound);
-
         GameObject projectile = Instantiate(lightProjectilePrefab, startPos, Quaternion.identity);
-
-        // Å¸°ÙÀÌ ¾øÀ¸¸é ÀÚ±â ÀÚ½Å(EndTrigger)À¸·Î ³¯¾Æ°¨
         Vector3 dest = targetStar != null ? targetStar.position : transform.position;
-
         while (Vector3.Distance(projectile.transform.position, dest) > 0.1f)
         {
-            projectile.transform.position = Vector3.MoveTowards(
-                projectile.transform.position,
-                dest,
-                Time.deltaTime * lightSpeed
-            );
+            projectile.transform.position = Vector3.MoveTowards(projectile.transform.position, dest, Time.deltaTime * lightSpeed);
             yield return null;
         }
         Destroy(projectile);
     }
 
-    // ½¦ÀÌÇÁÅ° ¾Ö´Ï¸ŞÀÌ¼Ç
-    IEnumerator FillStarShapeKey(float targetVal)
+    IEnumerator ChangeShapeKey(float targetVal)
     {
         if (starMesh == null) yield break;
-
         float currentVal = starMesh.GetBlendShapeWeight(0);
         float timer = 0f;
-        while (timer < 1f)
-        {
-            timer += Time.deltaTime * 2.0f; // ¼Óµµ
-            starMesh.SetBlendShapeWeight(0, Mathf.Lerp(currentVal, targetVal, timer));
-            yield return null;
-        }
+        while (timer < 1f) { timer += Time.deltaTime * 2.0f; starMesh.SetBlendShapeWeight(0, Mathf.Lerp(currentVal, targetVal, timer)); yield return null; }
         starMesh.SetBlendShapeWeight(0, targetVal);
-    }
-
-    // È­¸é ÆäÀÌµå
-    IEnumerator FadeScreen(float startAlpha, float endAlpha, float duration)
-    {
-        if (whiteFadePanel == null) yield break;
-        whiteFadePanel.gameObject.SetActive(true);
-
-        float timer = 0f;
-        Color c = whiteFadePanel.color;
-
-        while (timer < 1f)
-        {
-            timer += Time.deltaTime / duration;
-            c.a = Mathf.Lerp(startAlpha, endAlpha, timer);
-            whiteFadePanel.color = c;
-            yield return null;
-        }
-        if (endAlpha == 0) whiteFadePanel.gameObject.SetActive(false);
     }
 }
